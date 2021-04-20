@@ -1,0 +1,4 @@
+node_modules
+*.pixaki
+*.png
+.DS_Store
