@@ -2,13 +2,13 @@
 
 A CLI for Pixaki
 
-# Setup
+## Setup
 
 ```
 npm i && npm link
 ```
 
-# Usage
+## Usage
 
 ```
 pixaki layer FILE_PATH LAYER_NAME [--column=COUNT]
