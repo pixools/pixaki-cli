@@ -66,7 +66,7 @@ exports.layer = function(argv){
             let column = cels.length < columnCount ? cels.length : columnCount, // max column wrap
                 row = Math.ceil(cels.length / columnCount); // rows based on column wrap number
             console.log(columnCount);
-            exec(`montage _{${cellIDList}}.png -tile ${column}x${row} -geometry ${size[0]}x${size[1]}+0+0 -background transparent out.png`, () => {
+            exec(`montage _{${cellIDList}}.png -tile ${column}x${row} -geometry ${size[0]}x${size[1]}+0+0 -background transparent ${targetLayerName}.png`, () => {
                 
                 cels.forEach(cel => {
                     fs.unlinkSync(`_${cel.identifier}.png`);
