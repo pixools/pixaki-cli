@@ -1,11 +1,11 @@
 # pixaki-cli
 
-A CLI for Pixaki
+A CLI for Pixaki.
 
 ## Setup
 
 ```
-npm i && npm link
+npm i && npm run build && npm link
 ```
 
 ## Usage
