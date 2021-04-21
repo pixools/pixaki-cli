@@ -32,9 +32,10 @@
         "size": {
           "type": "array",
           "items": {
-            "required": [],
-            "properties": {}
-          }
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2
         },
         "showGrid": {
           "type": "boolean"
@@ -246,9 +247,10 @@
           "size": {
             "type": "array",
             "items": {
-              "required": [],
-              "properties": {}
-            }
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2
           },
           "cels": {
             "type": "array",
