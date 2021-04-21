@@ -1,0 +1,467 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "",
+  "type": "object",
+  "properties": {
+    "gridSettings": {
+      "type": "object",
+      "properties": {
+        "color": {
+          "type": "object",
+          "properties": {
+            "hue": {
+              "type": "number"
+            },
+            "saturation": {
+              "type": "number"
+            },
+            "brightness": {
+              "type": "number"
+            },
+            "alpha": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "hue",
+            "saturation",
+            "brightness",
+            "alpha"
+          ]
+        },
+        "size": {
+          "type": "array",
+          "items": {
+            "required": [],
+            "properties": {}
+          }
+        },
+        "showGrid": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "color",
+        "size",
+        "showGrid"
+      ]
+    },
+    "isIndexed": {
+      "type": "boolean"
+    },
+    "palette": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "identifier": {
+          "type": "string",
+          "minLength": 1
+        },
+        "colors": {
+          "type": "array",
+          "uniqueItems": true,
+          "minItems": 1,
+          "items": {
+            "required": [
+              "hue",
+              "saturation",
+              "brightness",
+              "alpha"
+            ],
+            "properties": {
+              "hue": {
+                "type": "number"
+              },
+              "saturation": {
+                "type": "number"
+              },
+              "brightness": {
+                "type": "number"
+              },
+              "alpha": {
+                "type": "number"
+              }
+            }
+          }
+        }
+      },
+      "required": [
+        "name",
+        "identifier",
+        "colors"
+      ]
+    },
+    "brushIdentifier": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sprites": {
+      "type": "array",
+      "uniqueItems": true,
+      "minItems": 1,
+      "items": {
+        "required": [
+          "duration",
+          "identifier"
+        ],
+        "properties": {
+          "layers": {
+            "type": "array",
+            "uniqueItems": true,
+            "minItems": 1,
+            "items": {
+              "required": [
+                "isVisible",
+                "type",
+                "name",
+                "opacity",
+                "identifier"
+              ],
+              "properties": {
+                "clips": {
+                  "type": "array",
+                  "uniqueItems": true,
+                  "minItems": 1,
+                  "items": {
+                    "required": [
+                      "identifier",
+                      "itemIdentifier"
+                    ],
+                    "properties": {
+                      "range": {
+                        "type": "object",
+                        "properties": {
+                          "start": {
+                            "type": "number"
+                          },
+                          "end": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "start",
+                          "end"
+                        ]
+                      },
+                      "identifier": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "itemIdentifier": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  }
+                },
+                "isVisible": {
+                  "type": "boolean"
+                },
+                "type": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "name": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "opacity": {
+                  "type": "number"
+                },
+                "identifier": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          },
+          "canvasConfiguration": {
+            "type": "object",
+            "properties": {
+              "previewZoomLevel": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "previewZoomLevel"
+            ]
+          },
+          "timelineSelection": {
+            "type": "object",
+            "properties": {
+              "frame": {
+                "type": "number"
+              },
+              "layer": {
+                "type": "object",
+                "properties": {
+                  "indexes": {
+                    "type": "array",
+                    "items": {
+                      "required": [],
+                      "properties": {}
+                    }
+                  }
+                },
+                "required": [
+                  "indexes"
+                ]
+              }
+            },
+            "required": [
+              "frame",
+              "layer"
+            ]
+          },
+          "symmetrySettings": {
+            "type": "object",
+            "properties": {
+              "reflectionType": {
+                "type": "number"
+              },
+              "isEnabled": {
+                "type": "boolean"
+              },
+              "position": {
+                "type": "array",
+                "items": {
+                  "required": [],
+                  "properties": {}
+                }
+              },
+              "isLocked": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "reflectionType",
+              "isEnabled",
+              "position",
+              "isLocked"
+            ]
+          },
+          "size": {
+            "type": "array",
+            "items": {
+              "required": [],
+              "properties": {}
+            }
+          },
+          "cels": {
+            "type": "array",
+            "uniqueItems": true,
+            "minItems": 1,
+            "items": {
+              "required": [
+                "requiresTrim",
+                "identifier",
+                "isVisible",
+                "type",
+                "opacity"
+              ],
+              "properties": {
+                "requiresTrim": {
+                  "type": "boolean"
+                },
+                "frame": {
+                  "type": "array",
+                  "items": {
+                    "required": [],
+                    "properties": {
+                      "0": {
+                        "type": "array",
+                        "uniqueItems": true,
+                        "items": {
+                          "required": [],
+                          "properties": {}
+                        }
+                      },
+                      "1": {
+                        "type": "array",
+                        "uniqueItems": true,
+                        "items": {
+                          "required": [],
+                          "properties": {}
+                        }
+                      }
+                    }
+                  }
+                },
+                "containerSize": {},
+                "identifier": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "isVisible": {
+                  "type": "boolean"
+                },
+                "type": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "opacity": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "duration": {
+            "type": "number"
+          },
+          "identifier": {
+            "type": "string",
+            "minLength": 1
+          },
+          "referenceImages": {
+            "type": "array",
+            "items": {
+              "required": [],
+              "properties": {}
+            }
+          }
+        }
+      }
+    },
+    "selectedColor": {
+      "type": "object",
+      "properties": {
+        "hue": {
+          "type": "number"
+        },
+        "saturation": {
+          "type": "number"
+        },
+        "brightness": {
+          "type": "number"
+        },
+        "alpha": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "hue",
+        "saturation",
+        "brightness",
+        "alpha"
+      ]
+    },
+    "animationSpeed": {
+      "type": "number"
+    },
+    "onionSkinSettings": {
+      "type": "object",
+      "properties": {
+        "tintMode": {
+          "type": "number"
+        },
+        "keyframesBefore": {
+          "type": "number"
+        },
+        "keyframesAfter": {
+          "type": "number"
+        },
+        "loop": {
+          "type": "boolean"
+        },
+        "isEnabled": {
+          "type": "boolean"
+        },
+        "opacity": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "tintMode",
+        "keyframesBefore",
+        "keyframesAfter",
+        "loop",
+        "isEnabled",
+        "opacity"
+      ]
+    },
+    "selectedSpriteIdentifier": {
+      "type": "string",
+      "minLength": 1
+    },
+    "brushOptions": {
+      "type": "object",
+      "properties": {
+        "size": {
+          "type": "number"
+        },
+        "usePixelPerfectSmoothing": {
+          "type": "boolean"
+        },
+        "selectedPatternIndex": {
+          "type": "number"
+        },
+        "opacity": {
+          "type": "number"
+        },
+        "patternAlignment": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "size",
+        "usePixelPerfectSmoothing",
+        "selectedPatternIndex",
+        "opacity",
+        "patternAlignment"
+      ]
+    },
+    "eraserOptions": {
+      "type": "object",
+      "properties": {
+        "size": {
+          "type": "number"
+        },
+        "usePixelPerfectSmoothing": {
+          "type": "boolean"
+        },
+        "selectedPatternIndex": {
+          "type": "number"
+        },
+        "opacity": {
+          "type": "number"
+        },
+        "patternAlignment": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "size",
+        "usePixelPerfectSmoothing",
+        "selectedPatternIndex",
+        "opacity",
+        "patternAlignment"
+      ]
+    },
+    "eraserIdentifier": {
+      "type": "string",
+      "minLength": 1
+    },
+    "primarySpriteIdentifier": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "required": [
+    "gridSettings",
+    "isIndexed",
+    "palette",
+    "brushIdentifier",
+    "sprites",
+    "selectedColor",
+    "animationSpeed",
+    "onionSkinSettings",
+    "selectedSpriteIdentifier",
+    "brushOptions",
+    "eraserOptions",
+    "eraserIdentifier",
+    "primarySpriteIdentifier"
+  ]
+}

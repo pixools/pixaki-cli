@@ -1,4 +1,5 @@
 node_modules
 *.pixaki
 *.png
+!pixaki-projects/**
 .DS_Store

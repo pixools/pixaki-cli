@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 
-const yargs = require("yargs");
-const { layer } = require("./layer");
+import yargs = require("yargs");
+import layer from "./layer";
+
+import { Commands } from "./interfaces/commands";
 
 const options = yargs
     .usage(`
@@ -10,7 +12,7 @@ const options = yargs
     .command('layer <path> <layerName> [columns]', 
         'Grab a layer', 
         // https://github.com/yargs/yargs/blob/master/docs/advanced.md#variadic-positional-arguments
-        (yargs) => {
+        (yargs: yargs.Argv) => {
             yargs.positional('path', {
                 describe: 'Pixaki file path',
                 type: 'string'
@@ -23,8 +25,7 @@ const options = yargs
                 type: 'number'
             })
         },
-        (argv) => {
-            console.log(argv);
+        (argv: Commands['layer']) => {
             layer(argv);
         })
         .argv;
