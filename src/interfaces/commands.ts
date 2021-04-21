@@ -1,7 +1,11 @@
 export interface Commands {
-    layer: {
-        path: string,
-        layerName: string,
-        columns: number
-    }
+    layer: BaseCommand & {
+        layerName: string
+    },
+    exporter: BaseCommand
+}
+
+interface BaseCommand {
+    path: string,
+    columns: number
 }
