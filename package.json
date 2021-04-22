@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "",
   "scripts": {
-    "build": "rimraf dist && tsc && rimraf dist/interfaces && node chmod && cp src/package.json dist/package.json",
+    "build": "rimraf dist && tsc && rimraf dist/interfaces && node chmod && cp src/package.json dist/package.json && cp src/README.md dist/README.md",
     "test": "npm run build && sudo npm link && pixaki export test/pixaki-projects/crate.pixaki"
   },
   "author": "",
