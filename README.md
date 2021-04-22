@@ -1,4 +1,4 @@
-# pixaki-cli
+# Pixaki CLI
 
 A CLI for Pixaki 4 files.
 
