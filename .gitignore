@@ -3,5 +3,4 @@ node_modules
 dist
 *.pixaki
 *.png
-!pixaki-projects/**
 .DS_Store
