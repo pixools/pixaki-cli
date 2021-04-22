@@ -6,6 +6,9 @@
       "type": "git",
       "url": "git://github.com/pixools/pixaki-cli.git"
   },
+  "bin": {
+    "pixaki": "./cli.js"
+  },
   "author": "Charlie Walter <charliejwalter@gmail.com>",
   "funding": {
     "type" : "individual",
