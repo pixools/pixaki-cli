@@ -10,8 +10,6 @@ export default function(argv: Commands['layer']){
         targetLayerName = argv.layerName,
         columnCount = argv.columns;
 
-        console.log(argv.columns);
-
     // Arg checks
     if(!pixakiFilePath){
         console.error("No pixaki file path arg given");
@@ -56,19 +54,19 @@ export default function(argv: Commands['layer']){
                 });
             });
             
-            let cellIDList = ''; // xxx,xxx,xxx,xxx
+            let celIDList = ''; // xxx,xxx,xxx,xxx
 
             cels.forEach((cel: any, index: any) => {
                 console.log(`Found ${cel.identifier}`);
                 let celImage: string = `${pixakiFilePath}/images/drawings/${cel.identifier}.png`;
                 im.convert(['_canvas.png', celImage, '-geometry', `+${cel.frame[0][0]}+${cel.frame[0][1]}`, '-composite', `_${cel.identifier}.png`]);
-                cellIDList += cel.identifier + ((index != cels.length - 1) ? ',' : ''); // Comma conditional
+                celIDList += cel.identifier + ((index != cels.length - 1) ? ',' : ''); // Comma conditional
             });
             
             let column = cels.length < columnCount ? cels.length : columnCount, // max column wrap
                 row = Math.ceil(cels.length / columnCount); // rows based on column wrap number
-            console.log(columnCount);
-            exec(`montage _{${cellIDList}}.png -tile ${column}x${row} -geometry ${size[0]}x${size[1]}+0+0 -background transparent ${targetLayerName}.png`, () => {
+            
+            exec(`montage _{${celIDList}}.png -tile ${column}x${row} -geometry ${size[0]}x${size[1]}+0+0 -background transparent ${targetLayerName}.png`, () => {
                 
                 cels.forEach((cel: any) => {
                     fs.unlinkSync(`_${cel.identifier}.png`);
