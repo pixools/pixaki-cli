@@ -16,8 +16,8 @@ npm i && npm run build && npm link
 pixaki export FILE_PATH [--column=COUNT]
 ```
 
-`COUNT` - When to "wrap" the spritesheet (defaults to `8`)
-`FILE_PATH` - The pixaki project to export from (requires `.pixaki`)
+- `COUNT`: When to "wrap" the spritesheet (defaults to `8`)
+- `FILE_PATH`: The pixaki project to export from (requires `.pixaki`)
 
 ### Example
 
@@ -37,4 +37,4 @@ This will grab 1 layer by name and create a spritesheet out of it. It will not r
 pixaki layer FILE_PATH LAYER_NAME [--column=COUNT]
 ```
 
-`LAYER_NAME` - can be anything, it just has to match a layer name within Pixaki
+- `LAYER_NAME`: can be anything, it just has to match a layer name within Pixaki
