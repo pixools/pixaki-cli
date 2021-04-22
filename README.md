@@ -1,6 +1,6 @@
 # Pixaki CLI
 
-A CLI for Pixaki 4 files.
+A CLI for [Pixaki 4](https://pixaki.com/) files.
 
 Currently, each command only exports as a spritesheet as this tool was designed, primarily, for use with [Working Copy](https://workingcopyapp.com/).
 
