@@ -1,60 +1,47 @@
-#!/usr/bin/env node
-
-import yargs = require("yargs");
+import { Command } from "commander";
 import layer from "./layer";
 import exporter from "./exporter";
+const packageJSON = require('./package.json');
 
-import { Commands } from "./interfaces/commands";
+const program = new Command();
 
-const PixakiPathArg: yargs.PositionalOptions = {
-    describe: 'Pixaki file path',
-    type: 'string'
-}
+const PixakiPathArg: string = 'Pixaki file path';
+const LayerArgDescription: string = 'Name of layer to extract';
+const ColumnOptionDescription: string = 'Column wrap, as seen in Pixaki when exporting as spritesheet';
 
-const PixakiLayerArg: yargs.PositionalOptions = {
-    describe: 'Name of layer to extract',
-    type: 'string'
-}
-
-const ColumnOptions: yargs.Options = {
-    describe: 'Column wrap, as seen in Pixaki when exporting as spritesheet',
-    default: 8,
-    type: 'number'
-}
-
-const options = yargs
+program
+    .version(packageJSON.version)
     .usage(`
+
         Usage: pixaki layer <path> <layerName> --columns=4
 
         All commands will create spritesheet if there are multiple frames.
-    `)
 
-    // Layer Commmand
-    .command('layer <path> <layerName> [columns]', 
-        
-        'Create a png export of a specific layer', 
-        
-        (yargs: yargs.Argv) => {
-            yargs.positional('path', PixakiPathArg)
-            .positional('layerName', PixakiLayerArg)
-            .option('columns', ColumnOptions)
-        },
+    `);
 
-        (argv: Commands['layer']) => {
-            layer(argv);
-        })
-    
-    // Export Command (Regular export, same as Pixaki Export->Spritesheet)
-    .command('export <path> [columns]', 
+// Layer Command
+program
+    .command('layer <path> <layerName> [columns]')
+    .description('Create a png export of a specific layer', {
+        path: PixakiPathArg,
+        layerName: LayerArgDescription,
+        columns: ColumnOptionDescription
+    })
+    .action((path: string, layerName: string, columns: string) => {
         
-        'Create a regular png export of a pixaki document', 
+        layer(path, layerName, parseInt(columns));
+    });
+
+// Export Command (Regular export, same as Pixaki Export->Spritesheet)
+program
+    .command('export <path> [columns]')
+    .description('Create a regular png export of a pixaki document', {
+        path: PixakiPathArg,
+        columns: ColumnOptionDescription
+    })
+    .action((path: string, layerName: string, columns: string) => {
         
-        (yargs: yargs.Argv) => {
-            yargs.positional('path', PixakiPathArg)
-            .option('columns', ColumnOptions)
-        },
-        (argv: Commands['exporter']) => {
-            exporter(argv);
-        })
-    
-    .argv;
+        exporter(path, parseInt(columns));
+    });
+
+program.parse(process.argv);

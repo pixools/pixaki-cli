@@ -1,18 +1,18 @@
-import { Commands, PixakiDocument } from "interfaces";
+import { PixakiDocument } from "./interfaces";
 import { convert } from 'imagemagick';
 import { TEMP_FOLDER_NAME } from './constants';
 import { temp } from "./helpers";
 
-export default function (argv: Commands['exporter']) {
+export default function (path: string, columns: number) {
 
     // TODO: Share duplicate code that exists between this and layer.ts (BaseCommand? GetPixakiFile + BaseArgs?)
     var fs = require('fs');
     var rimraf = require('rimraf');
-    var { exec } = require('child_process');
+    var shell = require('shelljs');
 
-    let pixakiFilePath = argv.path,
-        pixakiFileName = pixakiFilePath.split('.pixaki')[0],
-        columnCount = argv.columns;
+    let pixakiFilePath = path,
+        pixakiFileName = pixakiFilePath.match(/[ \w-]+?(?=\.)/g),
+        columnCount = columns || 8;
 
     // Arg checks
     if (!pixakiFilePath) {
@@ -59,22 +59,22 @@ export default function (argv: Commands['exporter']) {
 
                             let celImage: string = `${pixakiFilePath}/images/drawings/${cel.identifier}.png`;
 
-                            convert([temp('_canvas.png'), celImage, '-geometry', `+${cel.frame[0][0]}+${cel.frame[0][1]}`, '-composite', temp(`_${cel.identifier}.png`)], () => {
+                            convert([temp('_canvas.png'), celImage, '-geometry', `+${cel.frame[0][0]}+${cel.frame[0][1]}`, '-composite', temp(`_${cel.identifier}.png`)], (error) => {
 
-                                convert([temp(`_${cel.identifier}.png`), '-alpha', 'set', '-background', 'none', '-channel', 'A', '-evaluate', 'multiply', layer.opacity * cel.opacity, '+channel', temp(`_${cel.identifier}.png`)], () => {
+                                convert([temp(`_${cel.identifier}.png`), '-alpha', 'set', '-background', 'none', '-channel', 'A', '-evaluate', 'multiply', layer.opacity * cel.opacity, '+channel', temp(`_${cel.identifier}.png`)], (error) => {
 
                                     celPrintCount++;
 
                                     if (celPrintCount == layer.clips.length) {
 
-                                        let column = layer.clips.length < columnCount ? layer.clips.length : columnCount, // max column wrap
-                                            row = Math.ceil(layer.clips.length / columnCount); // rows based on column wrap number
+                                        let column: number = layer.clips.length < columnCount ? layer.clips.length : columnCount, // max column wrap
+                                            row: number = Math.ceil(layer.clips.length / columnCount); // rows based on column wrap number
 
                                         let layerSpritesheet = temp(`${layerIndex}_${layer.name.replace(" ", "-")}.png`);
 
                                         layerSpritesheets.push(layerSpritesheet);
-
-                                        exec(`montage ${temp(`_{${celIDList.join(',')}}.png`)} -tile ${column}x${row} -geometry ${size[0]}x${size[1]}+0+0 -background transparent ${layerSpritesheet}`, () => {
+                                        
+                                        shell.exec(`montage ${temp(`_{${celIDList.join(',')}}.png`)} -tile ${column}x${row} -geometry ${size[0]}x${size[1]}+0+0 -background transparent ${layerSpritesheet}`, () => {
 
                                             celIDList.forEach((celID) => {
                                                 fs.unlinkSync(temp(`_${celID}.png`));
@@ -90,7 +90,7 @@ export default function (argv: Commands['exporter']) {
                                                     pages.push('-page', '+0+0', spritesheetFile);
                                                 });
 
-                                                convert(pages.concat(['-background', 'transparent', '-layers', 'merge', '+repage', `${pixakiFileName}.png`]), () => {
+                                                convert(pages.concat(['-background', 'transparent', '-layers', 'merge', '+repage', `${pixakiFileName}.png`]), (error) => {
 
                                                     layerSpritesheets.sort().reverse().forEach((spritesheetFile) => {
                                                         fs.unlinkSync(spritesheetFile);
@@ -113,6 +113,6 @@ export default function (argv: Commands['exporter']) {
         });
 
     } else {
-        console.warn(`Couldn't find file: "${pixakiFilePath}"`);
+        console.log(`Couldn't find file: "${pixakiFilePath}"`);
     }
 }

@@ -1,13 +1,15 @@
 {
     "compilerOptions": {
-        "module": "commonjs",
+        "module": "es6",
         "moduleResolution": "node",
         "noImplicitAny": true,
         "removeComments": true,
         "preserveConstEnums": true,
         "sourceMap": true,
         "baseUrl": "src",
-        "outDir": "dist"
+        "outDir": "./dist/",
+        "allowSyntheticDefaultImports" : true,
+        "esModuleInterop" : true
     },
     "include": ["src/**/*"],
     "exclude": ["src/interfaces/**/*"]
