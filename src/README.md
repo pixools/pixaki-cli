@@ -17,7 +17,7 @@ pixaki export <PATH> [-c, --columns=COUNT]
 ```
 
 ```
-px e <PATH> [-c, --columns COUNT]
+px e <PATH> [-c, --columns=COUNT]
 ```
 
 - `COUNT`: When to "wrap" the spritesheet (defaults to `8`)
