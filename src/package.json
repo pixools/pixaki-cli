@@ -1,7 +1,7 @@
 {
   "name": "pixaki",
   "description": "A CLI for Pixaki",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "repository": {
     "type": "git",
     "url": "git://github.com/pixools/pixaki-cli.git"
