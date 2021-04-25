@@ -43,7 +43,7 @@ export default function (path: string, layerName: string, columns: number) {
 
             convert([temp('_srgb.png'), '-transparent', 'blue', temp('_canvas.png')], (error: any) => {
 
-                fs.unlinkSync(temp('_srgb.png'));
+                // fs.unlinkSync(temp('_srgb.png'));
 
                 // Loop through layers to find layer matching the given target layer name (grab the ID)
                 document.sprites[0].layers.forEach((layer: PixakiDocument['sprites'][0]['layers'][0]) => {
@@ -84,11 +84,11 @@ export default function (path: string, layerName: string, columns: number) {
                                 shell.exec(`montage ${temp(`_{${celIDList.join(',')}}.png`)} -tile ${column}x${row} -geometry ${size[0]}x${size[1]}+0+0 -background transparent '${pixakiFileName}_${targetLayerName}.png'`, () => {
 
                                     console.log('\x1b[32m%s\x1b[0m', `Exported layer to ${pixakiFileName}_${targetLayerName}.png`);
-                                    cels.forEach((cel: any) => {
-                                        fs.unlinkSync(temp(`_${cel.identifier}.png`));
-                                    });
+                                    // cels.forEach((cel: any) => {
+                                    //     fs.unlinkSync(temp(`_${cel.identifier}.png`));
+                                    // });
 
-                                    fs.unlinkSync(temp('_canvas.png'));
+                                    // fs.unlinkSync(temp('_canvas.png'));
                                     rimraf(TEMP_FOLDER_NAME, () => {});
                                 });
                             }
@@ -98,6 +98,7 @@ export default function (path: string, layerName: string, columns: number) {
                     return;
                 } else {
                     console.log("No layer found");
+                    rimraf(TEMP_FOLDER_NAME, () => {});
                     return;
                 }
             });

@@ -36,7 +36,7 @@ export default function (path: string, columns: number) {
 
             convert([temp('_srgb.png'), '-transparent', 'blue', temp('_canvas.png')], () => {
 
-                fs.unlinkSync(temp('_srgb.png'));
+                // fs.unlinkSync(temp('_srgb.png'));
 
                 let layerSpritesheetPrintCount: number = 0,
                     visibleLayers = document.sprites[0].layers.filter((layer) => layer.isVisible);
@@ -76,9 +76,9 @@ export default function (path: string, columns: number) {
                                         
                                         shell.exec(`montage ${temp(`_{${celIDList.join(',')}}.png`)} -tile ${column}x${row} -geometry ${size[0]}x${size[1]}+0+0 -background transparent ${layerSpritesheet}`, () => {
 
-                                            celIDList.forEach((celID) => {
-                                                fs.unlinkSync(temp(`_${celID}.png`));
-                                            });
+                                            // celIDList.forEach((celID) => {
+                                            //     fs.unlinkSync(temp(`_${celID}.png`));
+                                            // });
 
                                             layerSpritesheetPrintCount++;
 
@@ -94,10 +94,10 @@ export default function (path: string, columns: number) {
 
                                                     console.log('\x1b[32m%s\x1b[0m', `Exported to ${pixakiFileName}.png`);
 
-                                                    layerSpritesheets.sort().reverse().forEach((spritesheetFile) => {
-                                                        fs.unlinkSync(spritesheetFile);
-                                                    });
-                                                    fs.unlinkSync(temp('_canvas.png'));
+                                                    // layerSpritesheets.sort().reverse().forEach((spritesheetFile) => {
+                                                    //     fs.unlinkSync(spritesheetFile);
+                                                    // });
+                                                    // fs.unlinkSync(temp('_canvas.png'));
                                                     rimraf(TEMP_FOLDER_NAME, () => {});
                                                 });
                                             }
