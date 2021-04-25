@@ -17,6 +17,7 @@ npm i && npm run build && npm link
 ## Usage
 
 ```
-pixaki export FILE_PATH [--column=COUNT]
+pixaki export <PATH> [--columns COUNT]
+px e <PATH> [-c COUNT]
 ```
 

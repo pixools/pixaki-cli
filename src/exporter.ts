@@ -92,6 +92,8 @@ export default function (path: string, columns: number) {
 
                                                 convert(pages.concat(['-background', 'transparent', '-layers', 'merge', '+repage', `${pixakiFileName}.png`]), (error) => {
 
+                                                    console.log('\x1b[32m%s\x1b[0m', `Exported to ${pixakiFileName}.png`);
+
                                                     layerSpritesheets.sort().reverse().forEach((spritesheetFile) => {
                                                         fs.unlinkSync(spritesheetFile);
                                                     });

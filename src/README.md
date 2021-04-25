@@ -13,11 +13,15 @@ Currently, each command only exports as a spritesheet as this tool was designed,
 ## Usage
 
 ```
-pixaki export FILE_PATH [--column=COUNT]
+pixaki export <PATH> [-c, --columns=COUNT]
+```
+
+```
+px e <PATH> [-c, --columns COUNT]
 ```
 
 - `COUNT`: When to "wrap" the spritesheet (defaults to `8`)
-- `FILE_PATH`: The pixaki project to export from (requires `.pixaki`)
+- `PATH`: The pixaki project to export from (requires `.pixaki`)
 
 ### Example
 
@@ -26,7 +30,11 @@ pixaki export my-sprite.pixaki
 ```
 
 ```
-pixaki export my-sprite.pixaki --column=4
+pixaki export my-sprite.pixaki --columns=4
+```
+
+```
+px e my-sprite.pixaki -c=4
 ```
 
 ### Specific layer exporting
@@ -34,7 +42,11 @@ pixaki export my-sprite.pixaki --column=4
 This will grab 1 layer by name and create a spritesheet out of it. It will not respect any visibility or opacity settings and will be the raw drawing. Originally designed for exporting texture mapping. (Normals, Masks etc.)
 
 ```
-pixaki layer FILE_PATH LAYER_NAME [--column=COUNT]
+pixaki layer <PATH> <LAYER_NAME> [-c, --columns=COUNT]
+```
+
+```
+px l <PATH> <LAYER_NAME> [-c, --columns=COUNT]
 ```
 
 - `LAYER_NAME`: can be anything, it just has to match a layer name within Pixaki

@@ -21,27 +21,31 @@ program
 
 // Layer Command
 program
-    .command('layer <path> <layerName> [columns]')
+    .command('layer <path> <layerName>')
+    .alias('l')
+    .option('-c, --columns <count>', ColumnOptionDescription, '8')
     .description('Create a png export of a specific layer', {
         path: PixakiPathArg,
-        layerName: LayerArgDescription,
-        columns: ColumnOptionDescription
+        layerName: LayerArgDescription
     })
-    .action((path: string, layerName: string, columns: string) => {
+    .action((path: string, layerName: string, options: Options) => {
         
-        layer(path, layerName, parseInt(columns));
+        layer(path, layerName, parseInt(options.columns));
     });
 
 // Export Command (Regular export, same as Pixaki Export->Spritesheet)
 program
-    .command('export <path> [columns]')
+    .command('export <path>')
+    .alias('e')
+    .option('-c, --columns <count>', ColumnOptionDescription, '8')
     .description('Create a regular png export of a pixaki document', {
-        path: PixakiPathArg,
-        columns: ColumnOptionDescription
+        path: PixakiPathArg
     })
-    .action((path: string, layerName: string, columns: string) => {
-        
-        exporter(path, parseInt(columns));
+    .action((path: string, options: Options) => {
+
+        exporter(path, parseInt(options.columns));
     });
 
 program.parse(process.argv);
+
+interface Options { columns?: string }

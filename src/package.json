@@ -1,13 +1,14 @@
 {
   "name": "pixaki",
   "description": "A CLI for Pixaki",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "repository": {
     "type": "git",
     "url": "git://github.com/pixools/pixaki-cli.git"
   },
   "bin": {
-    "pixaki": "./cli.js"
+    "pixaki": "./cli.js",
+    "px": "./cli.js"
   },
   "author": "Charlie Walter <charliejwalter@gmail.com>",
   "funding": {

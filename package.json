@@ -1,13 +1,13 @@
 {
   "name": "pixaki",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "",
   "scripts": {
     "build": "rimraf dist && npx webpack && node chmod && cp src/package.json dist/package.json && cp src/README.md dist/README.md",
     "link": "cd dist && npm link && cd ..",
     "test:export": "pixaki export test/pixaki-projects/crate.pixaki",
     "test:layer": "pixaki layer test/pixaki-projects/crate.pixaki 'Arbitrary Map'",
-    "test:columns": "pixaki export test/pixaki-projects/crate.pixaki --columns=2"
+    "test:columns": "pixaki export test/pixaki-projects/crate.pixaki --columns=1 && pixaki layer test/pixaki-projects/crate.pixaki 'Arbitrary Map' --columns=1"
   },
   "main": "src/cli.ts",
   "author": "",
