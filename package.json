@@ -1,14 +1,23 @@
 {
   "name": "pixaki",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "",
   "scripts": {
     "build": "rimraf dist && npx webpack && node chmod && cp src/package.json dist/package.json && cp src/README.md dist/README.md",
     "link": "cd dist && npm link && cd ..",
-    "test:export": "pixaki export test/pixaki-projects/crate.pixaki",
-    "test:layer": "pixaki layer test/pixaki-projects/crate.pixaki 'Arbitrary Map'",
-    "test:columns": "pixaki export test/pixaki-projects/crate.pixaki --columns=1 && pixaki layer test/pixaki-projects/crate.pixaki 'Arbitrary Map' --columns=1",
-    "test:outDir": "pixaki export '**/*.pixaki' --columns=1 --outDir=OUT_DIR"
+    
+    "preDeploy": "npm run build && npm run link && npm run test:success",
+
+    "test:export:success": "pixaki export testFiles/crate.pixaki",
+    "test:layer:success": "pixaki layer testFiles/crate.pixaki 'Arbitrary Map'",
+    "test:columns:success": "pixaki export testFiles/crate.pixaki --columns=1 && pixaki layer testFiles/crate.pixaki 'Arbitrary Map' --columns=1",
+    "test:outDir:success": "pixaki export 'testFiles/**/*.pixaki' --columns=1 --outDir=OUT_DIR && pixaki layer 'testFiles/**/*.pixaki' 'Arbitrary Map' --columns=1 --outDir=OUT_DIR",
+    "test:success": "npm run test:export:success && npm run test:layer:success && npm run test:columns:success && npm run test:outDir:success",
+
+    "test:export:failure": "pixaki export testFiles/crat.pixaki",
+    "test:layer:failure": "pixaki layer testFiles/crate.pixaki 'Nonexistent Layer'",
+    "test:failure": "npm run test:export:failure && npm run test:layer:failure"
+    
   },
   "main": "src/cli.ts",
   "author": "",

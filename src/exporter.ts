@@ -1,16 +1,20 @@
 import { PixakiDocument } from "./interfaces";
 import { convert } from 'imagemagick';
 import { TEMP_FOLDER_NAME } from './constants';
-import { temp } from "./helpers";
+import { temp, DisplayCompleteMessage } from "./helpers";
 import { glob } from "glob";
 
 export default function (path: string, columns: number, outDir: string) {
+
+    console.log(`\nExporting...`);
 
     // TODO: Share duplicate code that exists between this and layer.ts (BaseCommand? GetPixakiFile + BaseArgs?)
     var fs = require('fs');
     var rimraf = require('rimraf');
     var shell = require('shelljs');
     var outDir = outDir ? outDir + '/' : '';
+    var successCount = 0;
+    var failCount = 0;
 
     let pixakiFilesPath = path,
         columnCount = columns || 8;
@@ -47,8 +51,6 @@ export default function (path: string, columns: number, outDir: string) {
                 convert(['-size', `${size[0]}x${size[1]}`, 'canvas:blue', temp('_' + pixakiFileName + '_srgb.png')], () => {
 
                     convert([temp('_' + pixakiFileName + '_srgb.png'), '-transparent', 'blue', temp('_' + pixakiFileName + '_canvas.png')], () => {
-
-                        // fs.unlinkSync(temp('_' + pixakiFileName + '_srgb.png'));
 
                         let layerSpritesheetPrintCount: number = 0,
                             visibleLayers = document.sprites[0].layers.filter((layer) => layer.isVisible);
@@ -88,10 +90,6 @@ export default function (path: string, columns: number, outDir: string) {
 
                                                 shell.exec(`montage ${temp(`_${pixakiFileName}_{${celIDList.join(',')}}.png`)} -tile ${column}x${row} -geometry ${size[0]}x${size[1]}+0+0 -background transparent ${layerSpritesheet}`, () => {
 
-                                                    // celIDList.forEach((celID) => {
-                                                    //     fs.unlinkSync(temp(`_${pixakiFileName}_${celID}.png`));
-                                                    // });
-
                                                     layerSpritesheetPrintCount++;
 
                                                     if (layerSpritesheetPrintCount == visibleLayers.length) {
@@ -102,8 +100,8 @@ export default function (path: string, columns: number, outDir: string) {
                                                             pages.push('-page', '+0+0', spritesheetFile);
                                                         });
 
-                                                        let outFile: string = pixakiFilePath.replace('.pixaki', '.png'); // sprite.pixaki, folder/sprite.pixaki
-                                                        let outFilePath: string = `${outDir}${outFile}`; // OUT_DIR/sprite.pixaki, OUT_DIR/folder/sprite.pixaki, sprite.pixaki, folder/sprite.pixaki
+                                                        let outFile: string = pixakiFilePath.replace('.pixaki', '.png'); // sprite.png, folder/sprite.png
+                                                        let outFilePath: string = `${outDir}${outFile}`; // OUT_DIR/sprite.png, OUT_DIR/folder/sprite.png, sprite.png, folder/sprite.png
                                                         let outFolderPath: string = outFilePath.split(pixakiFileName)[0];
 
                                                         if (outFolderPath[outFolderPath.length - 1] == "/") {
@@ -116,21 +114,19 @@ export default function (path: string, columns: number, outDir: string) {
 
                                                         convert(pages.concat(['-background', 'transparent', '-layers', 'merge', '+repage', `./${outFilePath}`]), (error) => {
 
-                                                            if(error){
-                                                                console.log('\x1b[31m%s\x1b[0m', `Failed export to ${outFilePath}.png (${error})`);
-                                                            }else{
-                                                                console.log('\x1b[32m%s\x1b[0m', `Exported to ${outFilePath}.png`);
+                                                            if (error) {
+                                                                console.log(`\x1b[31m%s\x1b[0m ${outFilePath}.png (${error})`, 'x');
+                                                                failCount++;
+                                                            } else {
+                                                                console.log(`\x1b[32m%s\x1b[0m ${outFilePath}.png`, `✔️`);
+                                                                successCount++;
                                                             }
-
-                                                            // layerSpritesheets.sort().reverse().forEach((spritesheetFile) => {
-                                                            //     fs.unlinkSync(spritesheetFile);
-                                                            // });
-                                                            // fs.unlinkSync(temp('_' + pixakiFileName + '_canvas.png'));
 
                                                             globDoneCount++;
 
                                                             if (globDoneCount == documentFiles.length) {
 
+                                                                DisplayCompleteMessage(successCount, failCount);
                                                                 rimraf(TEMP_FOLDER_NAME, () => { });
                                                             }
                                                         });
