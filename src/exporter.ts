@@ -115,10 +115,10 @@ export default function (path: string, columns: number, outDir: string) {
                                                         convert(pages.concat(['-background', 'transparent', '-layers', 'merge', '+repage', `./${outFilePath}`]), (error) => {
 
                                                             if (error) {
-                                                                console.log(`\x1b[31m%s\x1b[0m ${outFilePath}.png (${error})`, 'x');
+                                                                console.log(`\x1b[31m%s\x1b[0m ${outFilePath} (${error})`, 'x');
                                                                 failCount++;
                                                             } else {
-                                                                console.log(`\x1b[32m%s\x1b[0m ${outFilePath}.png`, `✔️`);
+                                                                console.log(`\x1b[32m%s\x1b[0m ${outFilePath}`, `✔️`);
                                                                 successCount++;
                                                             }
 
