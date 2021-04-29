@@ -1,120 +1,152 @@
 import { PixakiDocument } from "./interfaces";
 import { convert } from 'imagemagick';
 import { TEMP_FOLDER_NAME } from './constants';
-import { temp } from "./helpers";
+import { temp, DisplayCompleteMessage } from "./helpers";
+import { glob } from "glob";
 
-export default function (path: string, columns: number) {
+export default function (path: string, columns: number, outDir: string) {
+
+    console.log(`\nExporting...`);
 
     // TODO: Share duplicate code that exists between this and layer.ts (BaseCommand? GetPixakiFile + BaseArgs?)
     var fs = require('fs');
     var rimraf = require('rimraf');
     var shell = require('shelljs');
+    var outDir = outDir ? outDir + '/' : '';
+    var successCount = 0;
+    var failCount = 0;
 
-    let pixakiFilePath = path,
-        pixakiFileName = pixakiFilePath.match(/[ \w-]+?(?=\.)/g),
+    let pixakiFilesPath = path,
         columnCount = columns || 8;
 
     // Arg checks
-    if (!pixakiFilePath) {
+    if (!pixakiFilesPath) {
         console.error("No pixaki file path arg given");
         return;
     }
 
     // Pixaki 4 Document JSON file
-    let documentJSONPath = `${pixakiFilePath}/document.json`;
+    let documentJSONPath = `${pixakiFilesPath}/document.json`;
 
-    if (fs.existsSync(pixakiFilePath) && fs.existsSync(documentJSONPath)) {
+    let globDoneCount: number = 0;
+    glob(documentJSONPath, function (error: Error, documentFiles: string[]) {
 
-        let document: PixakiDocument = JSON.parse(fs.readFileSync(documentJSONPath, 'utf8')),
-            size = document.sprites[0].size, // [x,y] eg. [64,64]
-            layerSpritesheets: string[] = [];
+        if (documentFiles.length > 0) {
 
-        if (!fs.existsSync(TEMP_FOLDER_NAME)) {
-            fs.mkdirSync(TEMP_FOLDER_NAME);
-        }
-        convert(['-size', `${size[0]}x${size[1]}`, 'canvas:blue', temp('_srgb.png')], () => {
+            documentFiles.forEach((documentFile: string) => {
+                let document: PixakiDocument = JSON.parse(fs.readFileSync(documentFile, 'utf8')),
+                    size = document.sprites[0].size, // [x,y] eg. [64,64]
+                    layerSpritesheets: string[] = [],
+                    pixakiFilePath: string = documentFile.split('/document.json')[0],
+                    pixakiFileName: string = pixakiFilePath.match(/[ \w-]+?(?=\.)/)[0];
 
-            convert([temp('_srgb.png'), '-transparent', 'blue', temp('_canvas.png')], () => {
+                if (!fs.existsSync(TEMP_FOLDER_NAME)) {
+                    fs.mkdirSync(TEMP_FOLDER_NAME);
+                }
 
-                // fs.unlinkSync(temp('_srgb.png'));
+                if (outDir != '' && !fs.existsSync(outDir)) {
+                    fs.mkdirSync(outDir);
+                }
 
-                let layerSpritesheetPrintCount: number = 0,
-                    visibleLayers = document.sprites[0].layers.filter((layer) => layer.isVisible);
+                convert(['-size', `${size[0]}x${size[1]}`, 'canvas:blue', temp('_' + pixakiFileName + '_srgb.png')], () => {
 
-                // Each layer
-                document.sprites[0].layers.reverse().forEach((layer, layerIndex) => {
+                    convert([temp('_' + pixakiFileName + '_srgb.png'), '-transparent', 'blue', temp('_' + pixakiFileName + '_canvas.png')], () => {
 
-                    if (layer.isVisible) {
+                        let layerSpritesheetPrintCount: number = 0,
+                            visibleLayers = document.sprites[0].layers.filter((layer) => layer.isVisible);
 
-                        let opacity: number = layer.opacity,
-                            celIDList: string[] = [],
-                            celPrintCount: number = 0;
+                        // Each layer
+                        document.sprites[0].layers.reverse().forEach((layer, layerIndex) => {
 
-                        // Go through each frame in order of animation
-                        layer.clips.sort((a, b) => (a.range.start - b.range.start)).forEach((clip, clipIndex) => {
+                            if (layer.isVisible) {
 
-                            let cel = document.sprites[0].cels.find((cel) => {
-                                return cel.identifier == clip.itemIdentifier;
-                            });
+                                let opacity: number = layer.opacity,
+                                    celIDList: string[] = [],
+                                    celPrintCount: number = 0;
 
-                            let celImage: string = `${pixakiFilePath}/images/drawings/${cel.identifier}.png`;
+                                // Go through each frame in order of animation
+                                layer.clips.sort((a, b) => (a.range.start - b.range.start)).forEach((clip, clipIndex) => {
 
-                            convert([temp('_canvas.png'), celImage, '-geometry', `+${cel.frame[0][0]}+${cel.frame[0][1]}`, '-composite', temp(`_${cel.identifier}.png`)], (error) => {
+                                    let cel = document.sprites[0].cels.find((cel) => {
+                                        return cel.identifier == clip.itemIdentifier;
+                                    });
 
-                                convert([temp(`_${cel.identifier}.png`), '-alpha', 'set', '-background', 'none', '-channel', 'A', '-evaluate', 'multiply', layer.opacity * cel.opacity, '+channel', temp(`_${cel.identifier}.png`)], (error) => {
+                                    let celImage: string = `${pixakiFilePath}/images/drawings/${cel.identifier}.png`;
 
-                                    celPrintCount++;
+                                    convert([temp('_' + pixakiFileName + '_canvas.png'), celImage, '-geometry', `+${cel.frame[0][0]}+${cel.frame[0][1]}`, '-composite', temp(`_${pixakiFileName}_${cel.identifier}.png`)], (error) => {
 
-                                    if (celPrintCount == layer.clips.length) {
+                                        convert([temp(`_${pixakiFileName}_${cel.identifier}.png`), '-alpha', 'set', '-background', 'none', '-channel', 'A', '-evaluate', 'multiply', layer.opacity * cel.opacity, '+channel', temp(`_${pixakiFileName}_${cel.identifier}.png`)], (error) => {
 
-                                        let column: number = layer.clips.length < columnCount ? layer.clips.length : columnCount, // max column wrap
-                                            row: number = Math.ceil(layer.clips.length / columnCount); // rows based on column wrap number
+                                            celPrintCount++;
 
-                                        let layerSpritesheet = temp(`${layerIndex}_${layer.name.replace(" ", "-")}.png`);
+                                            if (celPrintCount == layer.clips.length) {
 
-                                        layerSpritesheets.push(layerSpritesheet);
-                                        
-                                        shell.exec(`montage ${temp(`_{${celIDList.join(',')}}.png`)} -tile ${column}x${row} -geometry ${size[0]}x${size[1]}+0+0 -background transparent ${layerSpritesheet}`, () => {
+                                                let column: number = layer.clips.length < columnCount ? layer.clips.length : columnCount, // max column wrap
+                                                    row: number = Math.ceil(layer.clips.length / columnCount); // rows based on column wrap number
 
-                                            // celIDList.forEach((celID) => {
-                                            //     fs.unlinkSync(temp(`_${celID}.png`));
-                                            // });
+                                                let layerSpritesheet = temp(`_${pixakiFileName}_${layerIndex}_${layer.name.replace(" ", "-")}.png`);
 
-                                            layerSpritesheetPrintCount++;
+                                                layerSpritesheets.push(layerSpritesheet);
 
-                                            if (layerSpritesheetPrintCount == visibleLayers.length) {
+                                                shell.exec(`montage ${temp(`_${pixakiFileName}_{${celIDList.join(',')}}.png`)} -tile ${column}x${row} -geometry ${size[0]}x${size[1]}+0+0 -background transparent ${layerSpritesheet}`, () => {
 
-                                                let pages: string[] = [];
+                                                    layerSpritesheetPrintCount++;
 
-                                                layerSpritesheets.sort().reverse().forEach((spritesheetFile) => {
-                                                    pages.push('-page', '+0+0', spritesheetFile);
-                                                });
+                                                    if (layerSpritesheetPrintCount == visibleLayers.length) {
 
-                                                convert(pages.concat(['-background', 'transparent', '-layers', 'merge', '+repage', `${pixakiFileName}.png`]), (error) => {
+                                                        let pages: string[] = [];
 
-                                                    console.log('\x1b[32m%s\x1b[0m', `Exported to ${pixakiFileName}.png`);
+                                                        layerSpritesheets.sort().reverse().forEach((spritesheetFile) => {
+                                                            pages.push('-page', '+0+0', spritesheetFile);
+                                                        });
 
-                                                    // layerSpritesheets.sort().reverse().forEach((spritesheetFile) => {
-                                                    //     fs.unlinkSync(spritesheetFile);
-                                                    // });
-                                                    // fs.unlinkSync(temp('_canvas.png'));
-                                                    rimraf(TEMP_FOLDER_NAME, () => {});
+                                                        let outFile: string = pixakiFilePath.replace('.pixaki', '.png'); // sprite.png, folder/sprite.png
+                                                        let outFilePath: string = `${outDir}${outFile}`; // OUT_DIR/sprite.png, OUT_DIR/folder/sprite.png, sprite.png, folder/sprite.png
+                                                        let outFolderPath: string = outFilePath.split(pixakiFileName)[0];
+
+                                                        if (outFolderPath[outFolderPath.length - 1] == "/") {
+                                                            outFolderPath = outFolderPath.slice(0, outFolderPath.length - 1);
+                                                        }
+
+                                                        if (outFolderPath != '') {
+                                                            fs.mkdirSync(outFolderPath, { recursive: true });
+                                                        }
+
+                                                        convert(pages.concat(['-background', 'transparent', '-layers', 'merge', '+repage', `./${outFilePath}`]), (error) => {
+
+                                                            if (error) {
+                                                                console.log(`\x1b[31m%s\x1b[0m ${outFilePath}.png (${error})`, 'x');
+                                                                failCount++;
+                                                            } else {
+                                                                console.log(`\x1b[32m%s\x1b[0m ${outFilePath}.png`, `✔️`);
+                                                                successCount++;
+                                                            }
+
+                                                            globDoneCount++;
+
+                                                            if (globDoneCount == documentFiles.length) {
+
+                                                                DisplayCompleteMessage(successCount, failCount);
+                                                                rimraf(TEMP_FOLDER_NAME, () => { });
+                                                            }
+                                                        });
+                                                    }
                                                 });
                                             }
                                         });
-                                    }
-                                });
-                            });
+                                    });
 
-                            celIDList.push(cel.identifier);
+                                    celIDList.push(cel.identifier);
+                                });
+                            }
                         });
-                    }
+                    });
+
                 });
             });
 
-        });
-
-    } else {
-        console.log(`Couldn't find file: "${pixakiFilePath}"`);
-    }
+        } else {
+            console.log('\x1b[31m%s\x1b[0m', `Couldn't find file: "${pixakiFilesPath}"`);
+        }
+    });
 }
