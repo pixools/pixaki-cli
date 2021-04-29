@@ -85,7 +85,10 @@ export default function (path: string, columns: number, outDir: string) {
                                                     row: number = Math.ceil(layer.clips.length / columnCount); // rows based on column wrap number
 
                                                 let layerSpritesheet = temp(`_${pixakiFileName}_${layerIndex}_${layer.name.replace(" ", "-")}.png`);
-
+                                                let grabLayerIndex = (layerName: string) => {
+                                                    return parseInt(layerName.split(`_${pixakiFileName}_`)[1].split('_')[0]);
+                                                }
+                                                
                                                 layerSpritesheets.push(layerSpritesheet);
 
                                                 shell.exec(`montage ${temp(`_${pixakiFileName}_{${celIDList.join(',')}}.png`)} -tile ${column}x${row} -geometry ${size[0]}x${size[1]}+0+0 -background transparent ${layerSpritesheet}`, () => {
@@ -96,7 +99,7 @@ export default function (path: string, columns: number, outDir: string) {
 
                                                         let pages: string[] = [];
 
-                                                        layerSpritesheets.sort().reverse().forEach((spritesheetFile) => {
+                                                        layerSpritesheets.sort((a, b) => { return grabLayerIndex(a) - grabLayerIndex(b) }).reverse().forEach((spritesheetFile) => {
                                                             pages.push('-page', '+0+0', spritesheetFile);
                                                         });
 
