@@ -7,7 +7,8 @@
     "link": "cd dist && npm link && cd ..",
     "test:export": "pixaki export test/pixaki-projects/crate.pixaki",
     "test:layer": "pixaki layer test/pixaki-projects/crate.pixaki 'Arbitrary Map'",
-    "test:columns": "pixaki export test/pixaki-projects/crate.pixaki --columns=1 && pixaki layer test/pixaki-projects/crate.pixaki 'Arbitrary Map' --columns=1"
+    "test:columns": "pixaki export test/pixaki-projects/crate.pixaki --columns=1 && pixaki layer test/pixaki-projects/crate.pixaki 'Arbitrary Map' --columns=1",
+    "test:outDir": "pixaki export '**/*.pixaki' --columns=1 --outDir=OUT_DIR"
   },
   "main": "src/cli.ts",
   "author": "",
@@ -18,12 +19,14 @@
   "dependencies": {
     "assert": "^2.0.0",
     "commander": "^7.2.0",
+    "glob": "^7.1.6",
     "imagemagick": "^0.1.3",
     "path": "^0.12.7",
     "rimraf": "^3.0.2",
     "shelljs": "^0.8.4"
   },
   "devDependencies": {
+    "@types/glob": "^7.1.3",
     "@types/imagemagick": "0.0.30",
     "@types/node": "^14.14.41",
     "ts-loader": "^9.0.2",

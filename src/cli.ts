@@ -5,9 +5,10 @@ const packageJSON = require('./package.json');
 
 const program = new Command();
 
-const PixakiPathArg: string = 'Pixaki file path';
+const PixakiPathArg: string = 'Pixaki file path pattern';
 const LayerArgDescription: string = 'Name of layer to extract';
 const ColumnOptionDescription: string = 'Column wrap, as seen in Pixaki when exporting as spritesheet';
+const OutDirectoryDescription = 'The directory to export the files to';
 
 program
     .version(packageJSON.version)
@@ -24,13 +25,14 @@ program
     .command('layer <path> <layerName>')
     .alias('l')
     .option('-c, --columns <count>', ColumnOptionDescription, '8')
+    .option('-o, --outDir <count>', OutDirectoryDescription, '')
     .description('Create a png export of a specific layer', {
         path: PixakiPathArg,
         layerName: LayerArgDescription
     })
     .action((path: string, layerName: string, options: Options) => {
         
-        layer(path, layerName, parseInt(options.columns));
+        layer(path, layerName, parseInt(options.columns), options.outDir);
     });
 
 // Export Command (Regular export, same as Pixaki Export->Spritesheet)
@@ -38,14 +40,14 @@ program
     .command('export <path>')
     .alias('e')
     .option('-c, --columns <count>', ColumnOptionDescription, '8')
+    .option('-o, --outDir <count>', OutDirectoryDescription, '')
     .description('Create a regular png export of a pixaki document', {
         path: PixakiPathArg
     })
     .action((path: string, options: Options) => {
-
-        exporter(path, parseInt(options.columns));
+        exporter(path, parseInt(options.columns), options.outDir);
     });
 
 program.parse(process.argv);
 
-interface Options { columns?: string }
+interface Options { columns?: string, outDir?: string }

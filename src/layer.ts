@@ -3,7 +3,7 @@ import { PixakiDocument } from "./interfaces";
 import { convert } from 'imagemagick';
 import { TEMP_FOLDER_NAME } from "./constants";
 
-export default function (path: string, layerName: string, columns: number) {
+export default function (path: string, layerName: string, columns: number, outDir: string) {
 
     var fs = require('fs');
     var shell = require('shelljs');
