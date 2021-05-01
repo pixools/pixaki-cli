@@ -3,13 +3,13 @@ import { PixakiDocument } from "./interfaces";
 import { convert } from 'imagemagick';
 import { TEMP_FOLDER_NAME } from "./constants";
 import { glob } from "glob";
+import { exec } from "shelljs";
 
 export default function (path: string, layerName: string, columns: number, outDir: string) {
     
     console.log(`\nLayer exporting...`);
 
     var fs = require('fs');
-    var shell = require('shelljs');
     var rimraf = require('rimraf');
     var outDir = outDir ? outDir + '/' : '';
     var successCount = 0;
@@ -28,6 +28,8 @@ export default function (path: string, layerName: string, columns: number, outDi
     if (!targetLayerName) {
         console.error("No layer arg given");
         return;
+    }else{
+        targetLayerName = targetLayerName.trim();
     }
 
     // Pixaki 4 Document JSON file
@@ -61,7 +63,7 @@ export default function (path: string, layerName: string, columns: number, outDi
 
                         // Loop through layers to find layer matching the given target layer name (grab the ID)
                         document.sprites[0].layers.forEach((layer: PixakiDocument['sprites'][0]['layers'][0]) => {
-                            if (layer.name == targetLayerName) {
+                            if (layer.name.trim() == targetLayerName) {
                                 // Sort by animation/frame (range.start) order and grab the itemIdentifier only
                                 layerIDs = layer.clips.sort((a: PixakiDocument['sprites'][0]['layers'][0]['clips'][0], b: PixakiDocument['sprites'][0]['layers'][0]['clips'][0]) => (a.range.start - b.range.start)).map((clip: any) => { return clip.itemIdentifier; });
                                 return;
@@ -107,7 +109,7 @@ export default function (path: string, layerName: string, columns: number, outDi
                                             fs.mkdirSync(outFolderPath, { recursive: true });
                                         }
 
-                                        shell.exec(`montage ${temp(`_${pixakiFileName}_{${celIDList.join(',')}}.png`)} -tile ${column}x${row} -geometry ${size[0]}x${size[1]}+0+0 -background transparent './${outFilePath}'`, () => {
+                                        exec(`montage ${temp(`_${pixakiFileName}_{${celIDList.join(',')}}.png`)} -tile ${column}x${row} -geometry ${size[0]}x${size[1]}+0+0 -background transparent './${outFilePath}'`, () => {
 
                                             console.log(`\x1b[32m%s\x1b[0m ${outFilePath}`, `✔️`);
 
