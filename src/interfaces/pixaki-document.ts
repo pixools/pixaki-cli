@@ -132,15 +132,7 @@ export interface PixakiDocument {
       cels?: [
         {
           requiresTrim: boolean;
-          frame?: {
-            "0"?: {
-              [k: string]: unknown;
-            }[];
-            "1"?: {
-              [k: string]: unknown;
-            }[];
-            [k: string]: unknown;
-          }[];
+          frame?: [[number, number], [number, number]];
           containerSize?: unknown;
           identifier: string;
           isVisible: boolean;
@@ -150,15 +142,7 @@ export interface PixakiDocument {
         },
         ...{
           requiresTrim: boolean;
-          frame?: {
-            "0"?: {
-              [k: string]: unknown;
-            }[];
-            "1"?: {
-              [k: string]: unknown;
-            }[];
-            [k: string]: unknown;
-          }[];
+          frame?: [[number, number], [number, number]];
           containerSize?: unknown;
           identifier: string;
           isVisible: boolean;
@@ -264,15 +248,7 @@ export interface PixakiDocument {
       cels?: [
         {
           requiresTrim: boolean;
-          frame?: {
-            "0"?: {
-              [k: string]: unknown;
-            }[];
-            "1"?: {
-              [k: string]: unknown;
-            }[];
-            [k: string]: unknown;
-          }[];
+          frame?: [[number, number], [number, number]];
           containerSize?: unknown;
           identifier: string;
           isVisible: boolean;
@@ -282,15 +258,7 @@ export interface PixakiDocument {
         },
         ...{
           requiresTrim: boolean;
-          frame?: {
-            "0"?: {
-              [k: string]: unknown;
-            }[];
-            "1"?: {
-              [k: string]: unknown;
-            }[];
-            [k: string]: unknown;
-          }[];
+          frame?: [[number, number], [number, number]];
           containerSize?: unknown;
           identifier: string;
           isVisible: boolean;

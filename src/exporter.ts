@@ -1,11 +1,11 @@
 import { PixakiDocument } from "./interfaces";
 import { convert } from 'imagemagick';
 import { TEMP_FOLDER_NAME } from './constants';
-import { temp, DisplayCompleteMessage } from "./helpers";
+import { temp, DisplayCompleteMessage, cwdCreate } from "./helpers";
 import { glob } from "glob";
 import { exec } from "shelljs";
 
-export default function (path: string, columns: number, outDir: string) {
+export default function (path: string, columns: number, outDir: string, cwd: string) {
 
     // require('events').EventEmitter.defaultMaxListeners = 20;
     // process.setMaxListeners(0);
@@ -18,8 +18,9 @@ export default function (path: string, columns: number, outDir: string) {
     var outDir = outDir ? outDir + '/' : '';
     var successCount = 0;
     var failCount = 0;
+    var createdCwd = cwdCreate(cwd);
 
-    let pixakiFilesPath = path,
+    let pixakiFilesPath = createdCwd + path,
         columnCount = columns || 8;
 
     // Arg checks
@@ -41,6 +42,7 @@ export default function (path: string, columns: number, outDir: string) {
                     size = document.sprites[0].size, // [x,y] eg. [64,64]
                     layerSpritesheets: string[] = [],
                     pixakiFilePath: string = documentFile.split('/document.json')[0],
+                    pixakiFilePathWithoutCwd: string = !!cwd ? pixakiFilePath.split(createdCwd)[1] : pixakiFilePath,
                     pixakiFileName: string = pixakiFilePath.match(/[ \w-]+?(?=\.)/)[0];
 
                 if (!fs.existsSync(TEMP_FOLDER_NAME)) {
@@ -71,9 +73,37 @@ export default function (path: string, columns: number, outDir: string) {
                                 // Go through each frame in order of animation
                                 layer.clips.sort((a, b) => (a.range.start - b.range.start)).forEach((clip, clipIndex) => {
 
-                                    let cel = document.sprites[0].cels.find((cel) => {
-                                        return cel.identifier == clip.itemIdentifier;
-                                    });
+                                    let cel: Partial<PixakiDocument['sprites'][0]['cels'][0]> = null;
+
+                                    let celImage: string;
+
+                                    if(!!clip.itemIdentifier){
+                                        cel = document.sprites[0].cels.find((cel) => {
+                                            return cel.identifier == clip.itemIdentifier;
+                                        });
+                                    }
+
+                                    if(!!cel) {
+
+                                        celImage = `${pixakiFilePath}/images/drawings/${cel.identifier}.png`;
+                                    }else{
+                                        cel = {
+                                            identifier: 'canvas',
+                                            isVisible: false,
+                                            frame: [
+                                                [
+                                                    0,
+                                                    0
+                                                ],
+                                                [
+                                                    0,
+                                                    0
+                                                ]
+                                            ]
+                                        }
+
+                                        celImage = temp('_' + pixakiFileName + '_canvas.png');
+                                    }
 
                                     // Examples for sanity:
                                     // clipIndex is 0 and range start is 9, push 9 (9-0)
@@ -86,8 +116,6 @@ export default function (path: string, columns: number, outDir: string) {
                                         }
                                         
                                     }
-
-                                    let celImage: string = `${pixakiFilePath}/images/drawings/${cel.identifier}.png`;
 
                                     // TODO: Don't perform all this if !cel.isVisible
                                     convert([temp('_' + pixakiFileName + '_canvas.png'), celImage, '-geometry', `+${cel.frame[0][0]}+${cel.frame[0][1]}`, '-composite', temp(`_${pixakiFileName}_${cel.identifier}.png`)], (error) => {
@@ -109,7 +137,7 @@ export default function (path: string, columns: number, outDir: string) {
                                                 layerSpritesheets.push(layerSpritesheet);
                                                 
                                                 // Factor in clip.range.start
-                                                exec(`montage ${temp(`_${pixakiFileName}_{${celIDList.join(',')}}.png`)} -tile ${column}x${row} -geometry ${size[0]}x${size[1]}+0+0 -background transparent ${layerSpritesheet}`, () => {
+                                                exec(`montage ${temp(`_${pixakiFileName.replace(' ', '\ ')}_{${celIDList.join(',')}}.png'`)} -tile ${column}x${row} -geometry ${size[0]}x${size[1]}+0+0 -background transparent ${layerSpritesheet}`, () => {
 
                                                     layerSpritesheetPrintCount++;
 
@@ -127,7 +155,7 @@ export default function (path: string, columns: number, outDir: string) {
                                                                     pages.push('-page', '+0+0', spritesheetFile);
                                                                 });
 
-                                                                let outFile: string = pixakiFilePath.replace('.pixaki', '.png'); // sprite.png, folder/sprite.png
+                                                                let outFile: string = pixakiFilePathWithoutCwd.replace('.pixaki', '.png'); // sprite.png, folder/sprite.png
                                                                 let outFilePath: string = `${outDir}${outFile}`; // OUT_DIR/sprite.png, OUT_DIR/folder/sprite.png, sprite.png, folder/sprite.png
                                                                 let outFolderPath: string = outFilePath.split(pixakiFileName)[0];
 
@@ -154,7 +182,7 @@ export default function (path: string, columns: number, outDir: string) {
                                                                     if (globDoneCount == documentFiles.length) {
 
                                                                         DisplayCompleteMessage(successCount, failCount);
-                                                                        // rimraf(TEMP_FOLDER_NAME, () => { });
+                                                                        rimraf(TEMP_FOLDER_NAME, () => { });
                                                                     }
                                                                 });
                                                             });
@@ -165,9 +193,7 @@ export default function (path: string, columns: number, outDir: string) {
                                         });
                                     });
                                     
-                                    if(true){ // cel.isVisible
-                                        celIDList.push(cel.identifier);
-                                    }
+                                    celIDList.push(cel.identifier);
                                 });
                             }
                         });
@@ -177,7 +203,7 @@ export default function (path: string, columns: number, outDir: string) {
             });
 
         } else {
-            console.log('\x1b[31m%s\x1b[0m', `Couldn't find file: "${pixakiFilesPath}"`);
+            console.log('\x1b[31m%s\x1b[0m', `Couldn't find file: "${pixakiFilesPath} (${documentJSONPath})"`);
         }
     });
 }

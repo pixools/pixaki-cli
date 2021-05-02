@@ -270,25 +270,15 @@
                 },
                 "frame": {
                   "type": "array",
+                  "minItems": 2,
+                  "maxItems": 2,
                   "items": {
-                    "required": [],
-                    "properties": {
-                      "0": {
-                        "type": "array",
-                        "uniqueItems": true,
-                        "items": {
-                          "required": [],
-                          "properties": {}
-                        }
-                      },
-                      "1": {
-                        "type": "array",
-                        "uniqueItems": true,
-                        "items": {
-                          "required": [],
-                          "properties": {}
-                        }
-                      }
+                    "type": "array",
+                    "minItems": 2,
+                    "maxItems": 2,
+                    "uniqueItems": true,
+                    "items": {
+                      "type": "number"
                     }
                   }
                 },

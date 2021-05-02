@@ -1,11 +1,11 @@
-import { DisplayCompleteMessage, temp } from "./helpers";
+import { DisplayCompleteMessage, temp, cwdCreate } from "./helpers";
 import { PixakiDocument } from "./interfaces";
 import { convert } from 'imagemagick';
 import { TEMP_FOLDER_NAME } from "./constants";
 import { glob } from "glob";
 import { exec } from "shelljs";
 
-export default function (path: string, layerName: string, columns: number, outDir: string) {
+export default function (path: string, layerName: string, columns: number, outDir: string, cwd: string) {
     
     console.log(`\nLayer exporting...`);
 
@@ -14,8 +14,9 @@ export default function (path: string, layerName: string, columns: number, outDi
     var outDir = outDir ? outDir + '/' : '';
     var successCount = 0;
     var failCount = 0;
+    var createdCwd = cwdCreate(cwd);
 
-    let pixakiFilesPath = path,
+    let pixakiFilesPath = createdCwd + path,
         targetLayerName = layerName,
         columnCount = columns || 8;
 
@@ -47,6 +48,7 @@ export default function (path: string, layerName: string, columns: number, outDi
                     cels: any = [],
                     size = document.sprites[0].size, // [x,y] eg. [64,64]
                     pixakiFilePath: string = documentFile.split('/document.json')[0],
+                    pixakiFilePathWithoutCwd: string = !!cwd ? pixakiFilePath.split(createdCwd)[1] : pixakiFilePath,
                     pixakiFileName: string = pixakiFilePath.match(/[ \w-]+?(?=\.)/)[0];
 
                 if (!fs.existsSync(TEMP_FOLDER_NAME)) {
@@ -97,7 +99,7 @@ export default function (path: string, layerName: string, columns: number, outDi
                                         let column = cels.length < columnCount ? cels.length : columnCount, // max column wrap
                                             row = Math.ceil(cels.length / columnCount); // rows based on column wrap number
 
-                                        let outFile: string = pixakiFilePath.replace('.pixaki', `_${targetLayerName}.png`); // sprite.png, folder/sprite.png
+                                        let outFile: string = pixakiFilePathWithoutCwd.replace('.pixaki', `_${targetLayerName}.png`); // sprite.png, folder/sprite.png
                                         let outFilePath: string = `${outDir}${outFile}`; // OUT_DIR/sprite.png, OUT_DIR/folder/sprite.png, sprite.png, folder/sprite.png
                                         let outFolderPath: string = outFilePath.split(pixakiFileName)[0];
 

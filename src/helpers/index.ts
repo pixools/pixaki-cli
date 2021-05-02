@@ -11,3 +11,17 @@ export let DisplayCompleteMessage = (successCount: number, failCount: number) =>
         console.log('\x1b[31m%s\x1b[0m', `${failCount} failures.`);
     }
 }
+
+export let cwdCreate = (cwd: string) => {
+    return !!cwd ? `${cwd}/` : '';
+}
+
+export let trimPotentialForwardSlash = (path: string) => {
+    let trimmed = path;
+    
+    if(path[path.length - 1] == '/'){
+        trimmed = path.slice(0, path.length - 1);
+    }
+
+    return trimmed;
+}
