@@ -137,7 +137,7 @@ export default function (path: string, columns: number, outDir: string, cwd: str
                                                 layerSpritesheets.push(layerSpritesheet);
                                                 
                                                 // Factor in clip.range.start
-                                                exec(`montage ${temp(`_${pixakiFileName.replace(' ', '\ ')}_{${celIDList.join(',')}}.png'`)} -tile ${column}x${row} -geometry ${size[0]}x${size[1]}+0+0 -background transparent ${layerSpritesheet}`, () => {
+                                                exec(`montage ${temp(`_${pixakiFileName.replace(' ', '\ ')}_{${celIDList.join(',')}}.png`)} -tile ${column}x${row} -geometry ${size[0]}x${size[1]}+0+0 -background transparent ${layerSpritesheet}`, () => {
 
                                                     layerSpritesheetPrintCount++;
 
