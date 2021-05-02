@@ -17,7 +17,7 @@ npm i && npm run build && npm link
 ## Usage
 
 ```
-pixaki export <PATH> [--columns=COUNT] [--outDir=OUT_DIR]
-px e <PATH> [-c COUNT] [-o OUT_DIR]
+pixaki export <PATH> [--columns=COUNT] [--outDir=OUT_DIR] [--cwd=CURRENT_WORKING_DIRECTORY]
+px e <PATH> [-c COUNT] [-o OUT_DIR] [--cwd=CURRENT_WORKING_DIRECTORY]
 ```
 

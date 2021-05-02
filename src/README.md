@@ -13,16 +13,17 @@ Currently, each command only exports as a spritesheet as this tool was designed,
 ## Usage
 
 ```
-pixaki export <PATH> [--columns=COUNT] [--outDir=OUT_DIR]
+pixaki export <PATH> [--columns=COUNT] [--outDir=OUT_DIR] [--cwd=CURRENT_WORKING_DIRECTORY]
 ``
 
 ``
-px e <PATH> [-c COUNT] [-o OUT_DIR]
+px e <PATH> [-c COUNT] [-o OUT_DIR] [--cwd=CURRENT_WORKING_DIRECTORY]
 ```
 
 - `COUNT`: When to "wrap" the spritesheet (defaults to `8`)
 - `PATH`: The pixaki project(s) to export from (requires `.pixaki`)
 - `OUT_DIR`: The output folder.
+- `CURRENT_WORKING_DIRECTORY`: The current working directory where to look for files (this will be ignored in the outDir)
 
 ### Example
 

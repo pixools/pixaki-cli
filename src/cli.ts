@@ -10,7 +10,7 @@ const PixakiPathArg: string = 'Pixaki file path pattern';
 const LayerArgDescription: string = 'Name of layer to extract';
 const ColumnOptionDescription: string = 'Column wrap, as seen in Pixaki when exporting as spritesheet';
 const OutDirectoryDescription = 'The directory to export the files to';
-const CurrentWorkingDirectoryDescription = 'The current working directory where to look for files (this will be ignored in the outDir';
+const CurrentWorkingDirectoryDescription = 'The current working directory where to look for files (this will be ignored in the outDir)';
 
 program
     .version(packageJSON.version)
