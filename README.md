@@ -1,4 +1,4 @@
-# Pixaki CLI
+# Pixaki CLI [![NPM Version](https://img.shields.io/npm/v/pixaki.svg?style=for-the-badge&logo=npm&label=pixaki&color=dodgerblue&link=https://www.npmjs.com/package/pixaki)](https://www.npmjs.com/package/pixaki)
 
 A CLI for [Pixaki 4](https://pixaki.com/) files. Available at https://www.npmjs.com/package/pixaki.
 
