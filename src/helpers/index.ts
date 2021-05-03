@@ -1,3 +1,5 @@
+import { State } from "gm";
+import gm from 'gm';
 import { TEMP_FOLDER_NAME } from "../constants";
 
 export let temp = (path: string) => {
@@ -25,3 +27,21 @@ export let trimPotentialForwardSlash = (path: string) => {
 
     return trimmed;
 }
+
+export let multiMontage = (magick: Magick, montageCollection: string[], montageIndex?: number, state?: State, ): State => {
+
+    if (!montageIndex) {
+        montageIndex = 0;
+    }
+
+    if (montageIndex < montageCollection.length - 1) {
+
+        let stateMontage = !state ? magick(montageCollection[montageIndex]) : state.montage(montageCollection[montageIndex]);
+        
+        return multiMontage(magick, montageCollection, montageIndex + 1, stateMontage);
+    } else {
+        return state.montage(montageCollection[montageIndex]);
+    }
+}
+
+type Magick = (stream: NodeJS.ReadableStream | Buffer | string, image?: string) => State;

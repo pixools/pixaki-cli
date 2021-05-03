@@ -2,6 +2,10 @@
 
 A CLI for [Pixaki 4](https://pixaki.com/) files.
 
+## ImageMagick
+
+First download and install [ImageMagick](http://www.imagemagick.org/), this package will not work without it.
+
 ## Install Globally
 
 ```

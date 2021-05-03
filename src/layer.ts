@@ -1,12 +1,12 @@
-import { DisplayCompleteMessage, temp, cwdCreate } from "./helpers";
+import { DisplayCompleteMessage, temp, cwdCreate, multiMontage } from "./helpers";
 import { PixakiDocument } from "./interfaces";
 import { convert } from 'imagemagick';
 import { TEMP_FOLDER_NAME } from "./constants";
 import { glob } from "glob";
-import { exec } from "shelljs";
+import { subClass } from "gm";
 
 export default function (path: string, layerName: string, columns: number, outDir: string, cwd: string) {
-    
+
     console.log(`\nLayer exporting...`);
 
     var fs = require('fs');
@@ -15,6 +15,7 @@ export default function (path: string, layerName: string, columns: number, outDi
     var successCount = 0;
     var failCount = 0;
     var createdCwd = cwdCreate(cwd);
+    var gm = subClass({ imageMagick: true });
 
     let pixakiFilesPath = createdCwd + path,
         targetLayerName = layerName,
@@ -29,7 +30,7 @@ export default function (path: string, layerName: string, columns: number, outDi
     if (!targetLayerName) {
         console.error("No layer arg given");
         return;
-    }else{
+    } else {
         targetLayerName = targetLayerName.trim();
     }
 
@@ -111,18 +112,26 @@ export default function (path: string, layerName: string, columns: number, outDi
                                             fs.mkdirSync(outFolderPath, { recursive: true });
                                         }
 
-                                        exec(`montage ${temp(`_${pixakiFileName}_{${celIDList.join(',')}}.png`)} -tile ${column}x${row} -geometry ${size[0]}x${size[1]}+0+0 -background transparent './${outFilePath}'`, () => {
-
-                                            console.log(`\x1b[32m%s\x1b[0m ${outFilePath}`, `✔️`);
-
-                                            globDoneCount++;
-                                            successCount++;
-                                            if (globDoneCount == documentFiles.length) {
-
-                                                DisplayCompleteMessage(successCount, failCount);
-                                                rimraf(TEMP_FOLDER_NAME, () => { });
-                                            }
+                                        let files = celIDList.map((celID: string) => {
+                                            return temp(`_${pixakiFileName.replace(' ', '\ ')}_${celID}.png`);
                                         });
+
+                                        multiMontage(gm, files)
+                                            .tile(`${column}x${row}`)
+                                            .geometry(`${size[0]}x${size[1]}+0+0`)
+                                            .background('transparent')
+                                            .write(`./${outFilePath}`, function (error) {
+
+                                                console.log(`\x1b[32m%s\x1b[0m ${outFilePath}`, `✔️`);
+
+                                                globDoneCount++;
+                                                successCount++;
+                                                if (globDoneCount == documentFiles.length) {
+
+                                                    DisplayCompleteMessage(successCount, failCount);
+                                                    rimraf(TEMP_FOLDER_NAME, () => { });
+                                                }
+                                            });
                                     }
                                 });
                             });
@@ -130,7 +139,7 @@ export default function (path: string, layerName: string, columns: number, outDi
                             return;
                         } else {
                             console.log(`\x1b[31m%s\x1b[0m ${pixakiFilePath} (No layer found)`, 'x');
-                            
+
                             globDoneCount++;
                             failCount++;
 
