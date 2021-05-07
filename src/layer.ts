@@ -5,6 +5,7 @@ import { TEMP_FOLDER_NAME } from "./constants";
 import { glob } from "glob";
 import { subClass } from "gm";
 
+// TODO: Add support for static layers (Create a test Pixaki Project first)
 export default function (path: string, layerName: string, columns: number, outDir: string, cwd: string) {
 
     console.log(`\nLayer exporting...`);
@@ -45,7 +46,7 @@ export default function (path: string, layerName: string, columns: number, outDi
             documentFiles.forEach((documentFile: string) => {
 
                 let document: PixakiDocument = JSON.parse(fs.readFileSync(documentFile, 'utf8')),
-                    layerIDs: any[] = null,
+                    layerIDs: any[] = [],
                     cels: any = [],
                     size = document.sprites[0].size, // [x,y] eg. [64,64]
                     pixakiFilePath: string = documentFile.split('/document.json')[0],
@@ -60,97 +61,157 @@ export default function (path: string, layerName: string, columns: number, outDi
                     fs.mkdirSync(outDir);
                 }
 
-                convert(['-size', `${size[0]}x${size[1]}`, 'canvas:blue', temp('_' + pixakiFileName + '_srgb.png')], () => {
+                convert(['-size', `${size[0]}x${size[1]}`, 'canvas:transparent', 'PNG32:' + temp('_' + pixakiFileName + '_canvas.png')], () => {
 
-                    convert([temp('_' + pixakiFileName + '_srgb.png'), '-transparent', 'blue', temp('_' + pixakiFileName + '_canvas.png')], (error: any) => {
+                    // Loop through layers to find layer matching the given target layer name (grab the ID)
+                    document.sprites[0].layers.forEach((layer: PixakiDocument['sprites'][0]['layers'][0]) => {
+                        if (layer.name.trim() == targetLayerName) {
 
-                        // Loop through layers to find layer matching the given target layer name (grab the ID)
-                        document.sprites[0].layers.forEach((layer: PixakiDocument['sprites'][0]['layers'][0]) => {
-                            if (layer.name.trim() == targetLayerName) {
-                                // Sort by animation/frame (range.start) order and grab the itemIdentifier only
-                                layerIDs = layer.clips.sort((a: PixakiDocument['sprites'][0]['layers'][0]['clips'][0], b: PixakiDocument['sprites'][0]['layers'][0]['clips'][0]) => (a.range.start - b.range.start)).map((clip: any) => { return clip.itemIdentifier; });
-                                return;
-                            }
-                        });
+                            // Sort by animation/frame (range.start) order and grab the itemIdentifier only
+                            // Add in blanks to make up for ranges not starting at 0
 
-                        if (!!layerIDs) {
+                            let clipIndex: number = 0;
+                            layer.clips.sort((a, b) => (a.range.start - b.range.start)).forEach((clip, index) => {
 
-                            // Find all the "cels" of these IDs, these have more info about positioning/size 
-                            // and create an array of them
-                            layerIDs.forEach((layerID: any) => {
+                                if(!clip.range){
+                                    let animationDuration = document.sprites[0].duration;
+
+                                    for (var i = 0; i < animationDuration; i++) {
+                                        layerIDs.push(clip.itemIdentifier);
+                                    }
+                                }else{
+
+                                    // Examples for sanity:
+                                    // clipIndex is 0 and range start is 9, push 9 (9-0)
+                                    // clipIndex is 1 and range start is 9, push 8 (9-1) - (The original bug / had one valid item at the start)
+                                    // clipIndex is 5 and range start is 9, push 4 (9-5)
+                                    if (clip.range != null && clipIndex !== clip.range.start) {
+
+                                        let difference = clip.range.start - clipIndex;
+                                        for (var i = 0; i < difference; i++) {
+                                            layerIDs.push('canvas');
+                                        }
+
+                                        clipIndex = difference;
+
+                                    }
+
+                                    layerIDs.push(clip.itemIdentifier);
+
+                                    clipIndex++;
+                                }
+                            });
+
+                            // .map((clip: any) => { return clip.itemIdentifier; });
+                            return;
+                        }
+                    });
+
+                    if (!!layerIDs && layerIDs.length > 0) {
+
+                        // Find all the "cels" of these IDs, these have more info about positioning/size 
+                        // and create an array of them
+                        layerIDs.forEach((layerID: any, index: number) => {
+
+                            if (layerID == 'canvas') {
+
+                                cels.push({
+                                    identifier: 'canvas',
+                                    isVisible: false,
+                                    frame: [
+                                        [
+                                            0,
+                                            0
+                                        ],
+                                        [
+                                            0,
+                                            0
+                                        ]
+                                    ]
+                                });
+
+                            } else {
+
                                 document.sprites[0].cels.forEach((cel: any) => {
                                     if (cel.identifier == layerID) {
                                         cels.push(cel);
                                     }
                                 });
-                            });
-
-                            let celIDList: string[] = [];
-                            let celsDone: number = 0;
-                            cels.forEach((cel: any, index: any) => {
-
-                                let celImage: string = `${pixakiFilePath}/images/drawings/${cel.identifier}.png`;
-                                celIDList.push(cel.identifier);
-                                convert([temp('_' + pixakiFileName + '_canvas.png'), celImage, '-geometry', `+${cel.frame[0][0]}+${cel.frame[0][1]}`, '-composite', temp(`_${pixakiFileName}_${cel.identifier}.png`)], () => {
-                                    celsDone++;
-
-                                    // Done all
-                                    if (celsDone == cels.length) {
-
-                                        let column = cels.length < columnCount ? cels.length : columnCount, // max column wrap
-                                            row = Math.ceil(cels.length / columnCount); // rows based on column wrap number
-
-                                        let outFile: string = pixakiFilePathWithoutCwd.replace('.pixaki', `_${targetLayerName}.png`); // sprite.png, folder/sprite.png
-                                        let outFilePath: string = `${outDir}${outFile}`; // OUT_DIR/sprite.png, OUT_DIR/folder/sprite.png, sprite.png, folder/sprite.png
-                                        let outFolderPath: string = outFilePath.split(pixakiFileName)[0];
-
-                                        if (outFolderPath[outFolderPath.length - 1] == "/") {
-                                            outFolderPath = outFolderPath.slice(0, outFolderPath.length - 1);
-                                        }
-
-                                        if (outFolderPath != '') {
-                                            fs.mkdirSync(outFolderPath, { recursive: true });
-                                        }
-
-                                        let files = celIDList.map((celID: string) => {
-                                            return temp(`_${pixakiFileName.replace(' ', '\ ')}_${celID}.png`);
-                                        });
-
-                                        multiMontage(gm, files)
-                                            .tile(`${column}x${row}`)
-                                            .geometry(`${size[0]}x${size[1]}+0+0`)
-                                            .background('transparent')
-                                            .write(`./${outFilePath}`, function (error) {
-
-                                                console.log(`\x1b[32m%s\x1b[0m ${outFilePath}`, `✔️`);
-
-                                                globDoneCount++;
-                                                successCount++;
-                                                if (globDoneCount == documentFiles.length) {
-
-                                                    DisplayCompleteMessage(successCount, failCount);
-                                                    rimraf(TEMP_FOLDER_NAME, () => { });
-                                                }
-                                            });
-                                    }
-                                });
-                            });
-
-                            return;
-                        } else {
-                            console.log(`\x1b[31m%s\x1b[0m ${pixakiFilePath} (No layer found)`, 'x');
-
-                            globDoneCount++;
-                            failCount++;
-
-                            if (globDoneCount == documentFiles.length) {
-
-                                DisplayCompleteMessage(successCount, failCount);
-                                rimraf(TEMP_FOLDER_NAME, () => { });
                             }
-                            return;
+                        });
+
+                        let celIDList: string[] = [];
+                        let celsDone: number = 0;
+
+                        cels.forEach((cel: any, index: any) => {
+                            
+                            let celImage: string = temp(`_${pixakiFileName}_canvas.png`);
+                            
+                            if(cel.identifier != 'canvas'){
+                                celImage = `${pixakiFilePath}/images/drawings/${cel.identifier}.png`;
+                            }
+
+                            celIDList.push(cel.identifier);
+
+                            convert([temp('_' + pixakiFileName + '_canvas.png'), celImage, '-geometry', `+${cel.frame[0][0]}+${cel.frame[0][1]}`, '-composite', 'PNG32:' + temp(`_${pixakiFileName}_${cel.identifier}.png`)], () => {
+                                celsDone++;
+
+                                // Done all
+                                if (celsDone == cels.length) {
+
+                                    let column = cels.length < columnCount ? cels.length : columnCount, // max column wrap
+                                        row = Math.ceil(cels.length / columnCount); // rows based on column wrap number
+
+                                    let outFile: string = pixakiFilePathWithoutCwd.replace('.pixaki', `_${targetLayerName}.png`); // sprite.png, folder/sprite.png
+                                    let outFilePath: string = `${outDir}${outFile}`; // OUT_DIR/sprite.png, OUT_DIR/folder/sprite.png, sprite.png, folder/sprite.png
+                                    let outFolderPath: string = outFilePath.split(pixakiFileName)[0];
+
+                                    if (outFolderPath[outFolderPath.length - 1] == "/") {
+                                        outFolderPath = outFolderPath.slice(0, outFolderPath.length - 1);
+                                    }
+
+                                    if (outFolderPath != '') {
+                                        fs.mkdirSync(outFolderPath, { recursive: true });
+                                    }
+
+                                    let files = celIDList.map((celID: string) => {
+                                        return temp(`_${pixakiFileName.replace(' ', '\ ')}_${celID}.png`);
+                                    });
+
+                                    multiMontage(gm, files)
+                                        .tile(`${column}x${row}`)
+                                        .geometry(`${size[0]}x${size[1]}+0+0`)
+                                        .background('transparent')
+                                        .write(`./${outFilePath}`, function (error) {
+
+                                            console.log(`\x1b[32m%s\x1b[0m ${outFilePath}`, `✔️`);
+
+                                            globDoneCount++;
+                                            successCount++;
+                                            if (globDoneCount == documentFiles.length) {
+
+                                                DisplayCompleteMessage(successCount, failCount);
+                                                rimraf(TEMP_FOLDER_NAME, () => { });
+                                            }
+                                        });
+                                }
+                            });
+                        });
+
+                        return;
+                    } else {
+                        console.log(`\x1b[31m%s\x1b[0m ${pixakiFilePath} (No layer found)`, 'x');
+
+                        globDoneCount++;
+                        failCount++;
+
+                        if (globDoneCount == documentFiles.length) {
+
+                            DisplayCompleteMessage(successCount, failCount);
+                            rimraf(TEMP_FOLDER_NAME, () => { });
                         }
-                    });
+                        return;
+                    }
                 });
             });
 
