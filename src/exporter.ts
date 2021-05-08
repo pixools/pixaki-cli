@@ -4,6 +4,7 @@ import { TEMP_FOLDER_NAME } from './constants';
 import { temp, DisplayCompleteMessage, cwdCreate, multiMontage } from "./helpers";
 import { glob } from "glob";
 import { subClass } from "gm";
+import fsExtra from 'fs-extra';
 
 export default function (path: string, columns: number, outDir: string, cwd: string) {
 
@@ -13,13 +14,16 @@ export default function (path: string, columns: number, outDir: string, cwd: str
     console.log(`\nExporting...`);
 
     // TODO: Share duplicate code that exists between this and layer.ts (BaseCommand? GetPixakiFile + BaseArgs?)
-    var fs = require('fs');
-    var rimraf = require('rimraf');
+    const fs = require('fs');
+    const rimraf = require('rimraf');
     var outDir = outDir ? outDir + '/' : '';
     var successCount = 0;
     var failCount = 0;
     var createdCwd = cwdCreate(cwd);
-    var gm = subClass({ imageMagick: true });
+    const gm = subClass({ imageMagick: true });
+    const isZip = require('is-zip');
+    const isDirectory = require('is-directory');
+    const decompress = require('decompress');
 
     let pixakiFilesPath = createdCwd + path,
         columnCount = columns || 8;
@@ -30,161 +34,162 @@ export default function (path: string, columns: number, outDir: string, cwd: str
         return;
     }
 
-    // Pixaki 4 Document JSON file
-    let documentJSONPath = `${pixakiFilesPath}/document.json`;
-
     let globDoneCount: number = 0;
-    glob(documentJSONPath, function (error: Error, documentFiles: string[]) {
+    glob(pixakiFilesPath, function (error: Error, pixakiProjectFiles: string[]) {
 
-        if (documentFiles.length > 0) {
+        if (pixakiProjectFiles.length > 0) {
 
+            pixakiProjectFiles.forEach((pixakiProjectFile: string) => {
 
-            documentFiles.forEach((documentFile: string) => {
-                let document: PixakiDocument = JSON.parse(fs.readFileSync(documentFile, 'utf8')),
-                    size = document.sprites[0].size, // [x,y] eg. [64,64]
-                    layerSpritesheets: string[] = [],
-                    pixakiFilePath: string = documentFile.split('/document.json')[0],
-                    pixakiFilePathWithoutCwd: string = !!cwd ? pixakiFilePath.split(createdCwd)[1] : pixakiFilePath,
-                    pixakiFileName: string = pixakiFilePath.match(/[ \w-]+?(?=\.)/)[0];
+                let doExport = () => {
+                    let unzippedPixakiFilePath: string = temp(pixakiProjectFile),
+                        document: PixakiDocument = JSON.parse(fs.readFileSync(`${unzippedPixakiFilePath}/document.json`, 'utf8')),
+                        size = document.sprites[0].size, // [x,y] eg. [64,64]
+                        layerSpritesheets: string[] = [],
+                        pixakiFilePathWithoutCwd: string = !!cwd ? pixakiProjectFile.split(createdCwd)[1] : pixakiProjectFile,
+                        pixakiFileName: string = pixakiProjectFile.match(/[ \w-]+?(?=\.)/)[0];
 
-                if (!fs.existsSync(TEMP_FOLDER_NAME)) {
-                    fs.mkdirSync(TEMP_FOLDER_NAME);
-                }
+                    convert(['-size', `${size[0]}x${size[1]}`, 'canvas:transparent', 'PNG32:' + temp('_' + pixakiFileName + '_canvas.png')], () => {
 
-                if (outDir != '' && !fs.existsSync(outDir)) {
-                    fs.mkdirSync(outDir);
-                }
+                        let layerSpritesheetPrintCount: number = 0,
+                            visibleLayers = document.sprites[0].layers.filter((layer) => layer.isVisible),
+                            animationDuration = document.sprites[0].duration;
 
-                convert(['-size', `${size[0]}x${size[1]}`, 'canvas:transparent', 'PNG32:'+ temp('_' + pixakiFileName + '_canvas.png')], () => {
+                        // Each layer
+                        document.sprites[0].layers.reverse().forEach((layer, layerIndex) => {
 
-                    let layerSpritesheetPrintCount: number = 0,
-                        visibleLayers = document.sprites[0].layers.filter((layer) => layer.isVisible),
-                        animationDuration = document.sprites[0].duration;
+                            if (layer.isVisible) {
 
-                    // Each layer
-                    document.sprites[0].layers.reverse().forEach((layer, layerIndex) => {
+                                let opacity: number = layer.opacity,
+                                    celIDList: string[] = [],
+                                    celPrintCount: number = 0,
+                                    clipIndex: number = 0;
 
-                        if (layer.isVisible) {
+                                // Go through each frame in order of animation
+                                layer.clips.sort((a, b) => (a.range.start - b.range.start)).forEach((clip) => {
 
-                            let opacity: number = layer.opacity,
-                                celIDList: string[] = [],
-                                celPrintCount: number = 0,
-                                clipIndex: number = 0;
+                                    let cel: Partial<PixakiDocument['sprites'][0]['cels'][0]> = null;
 
-                            // Go through each frame in order of animation
-                            layer.clips.sort((a, b) => (a.range.start - b.range.start)).forEach((clip) => {
+                                    let celImage: string;
 
-                                let cel: Partial<PixakiDocument['sprites'][0]['cels'][0]> = null;
-
-                                let celImage: string;
-
-                                if (!!clip.itemIdentifier) {
-                                    cel = document.sprites[0].cels.find((cel) => {
-                                        return cel.identifier == clip.itemIdentifier;
-                                    });
-                                }
-
-                                if (!!cel) {
-
-                                    celImage = `${pixakiFilePath}/images/drawings/${cel.identifier}.png`;
-                                } else {
-                                    cel = {
-                                        identifier: 'canvas',
-                                        isVisible: false,
-                                        frame: [
-                                            [
-                                                0,
-                                                0
-                                            ],
-                                            [
-                                                0,
-                                                0
-                                            ]
-                                        ]
-                                    };
-
-                                    celImage = 'PNG32:' + temp('_' + pixakiFileName + '_canvas.png');
-                                }
-
-                                // cel.frame can be null sometimes when cel has been manually erased, rather than cleared.
-                                // This is so that the process can still go ahead
-                                if(!cel.frame){
-                                    cel = {
-                                        identifier: 'canvas',
-                                        isVisible: false,
-                                        frame: [
-                                            [
-                                                0,
-                                                0
-                                            ],
-                                            [
-                                                0,
-                                                0
-                                            ]
-                                        ]
-                                    };
-                                }
-
-                                // TODO: Support static images (null range)
-
-                                // Examples for sanity:
-                                // clipIndex is 0 and range start is 9, push 9 (9-0)
-                                // clipIndex is 1 and range start is 9, push 8 (9-1) - (The original bug / had one valid item at the start)
-                                // clipIndex is 5 and range start is 9, push 4 (9-5)
-                                if (clip.range != null && clipIndex !== clip.range.start) {
-
-                                    let difference = clip.range.start - clipIndex;
-                                    for (var i = 0; i < difference; i++) {
-                                        celIDList.push('canvas');
+                                    if (!!clip.itemIdentifier) {
+                                        cel = document.sprites[0].cels.find((cel) => {
+                                            return cel.identifier == clip.itemIdentifier;
+                                        });
                                     }
 
-                                    clipIndex = difference;
+                                    if (!!cel) {
 
-                                }
+                                        celImage = `${unzippedPixakiFilePath}/images/drawings/${cel.identifier}.png`;
+                                    } else {
+                                        cel = {
+                                            identifier: 'canvas',
+                                            isVisible: false,
+                                            frame: [
+                                                [
+                                                    0,
+                                                    0
+                                                ],
+                                                [
+                                                    0,
+                                                    0
+                                                ]
+                                            ]
+                                        };
 
-                                clipIndex++;
+                                        celImage = 'PNG32:' + temp('_' + pixakiFileName + '_canvas.png');
+                                    }
 
-                                // TODO: Don't perform all this if ! cel.frame
-                                // TODO: Don't perform all this if !cel.isVisible
-                                convert([temp('_' + pixakiFileName + '_canvas.png'), celImage, '-geometry', `+${cel.frame[0][0]}+${cel.frame[0][1]}`, '-composite', 'PNG32:' + temp(`_${pixakiFileName}_${cel.identifier}.png`)], (error) => {
+                                    // cel.frame can be null sometimes when cel has been manually erased, rather than cleared.
+                                    // This is so that the process can still go ahead
+                                    if (!cel.frame) {
+                                        cel = {
+                                            identifier: 'canvas',
+                                            isVisible: false,
+                                            frame: [
+                                                [
+                                                    0,
+                                                    0
+                                                ],
+                                                [
+                                                    0,
+                                                    0
+                                                ]
+                                            ]
+                                        };
+                                    }
 
-                                    convert([temp(`_${pixakiFileName}_${cel.identifier}.png`), '-alpha', 'set', '-background', 'none', '-channel', 'A', '-evaluate', 'multiply', cel.isVisible ? (layer.opacity * cel.opacity) : 0, '+channel', 'PNG32:' + temp(`_${pixakiFileName}_${cel.identifier}.png`)], (error) => {
+                                    // TODO: Support static images (null range)
 
-                                        celPrintCount++;
+                                    // Examples for sanity:
+                                    // clipIndex is 0 and range start is 9, push 9 (9-0)
+                                    // clipIndex is 1 and range start is 9, push 8 (9-1) - (The original bug / had one valid item at the start)
+                                    // clipIndex is 5 and range start is 9, push 4 (9-5)
+                                    if (clip.range != null && clipIndex !== clip.range.start) {
 
-                                        if (celPrintCount == layer.clips.length) {
+                                        // TODO: Add support for duration using range.end
+                                        let difference = clip.range.start - clipIndex;
+                                        for (var i = 0; i < difference; i++) {
+                                            celIDList.push('canvas');
+                                        }
 
-                                            let column: number = animationDuration < columnCount ? animationDuration : columnCount, // max column wrap
-                                                row: number = Math.ceil(animationDuration / columnCount); // rows based on column wrap number
+                                        clipIndex = difference;
 
-                                            let layerSpritesheet = temp(`_${pixakiFileName}_${layerIndex}_${layer.name.replace(" ", "-")}.png`);
-                                            let grabLayerIndex = (layerName: string) => {
-                                                return parseInt(layerName.split(`_${pixakiFileName}_`)[1].split('_')[0]);
-                                            }
+                                    }
 
-                                            layerSpritesheets.push(layerSpritesheet);
+                                    clipIndex++;
 
-                                            let files = celIDList.map((celID: string) => {
-                                                return temp(`_${pixakiFileName.replace(' ', '\ ')}_${celID}.png`);
-                                            });
+                                    if (!clip.range) {
 
-                                            multiMontage(gm, files)
-                                                .tile(`${column}x${row}`)
-                                                .geometry(`${size[0]}x${size[1]}+0+0`)
-                                                .background('transparent')
-                                                .write(layerSpritesheet, function (error) {
+                                        for (var i = 0; i < animationDuration; i++) {
+                                            celIDList.push(cel.identifier);
+                                        }
 
-                                                    if (error) {
-                                                        console.error(error);
-                                                    }
+                                    } else {
+                                        celIDList.push(cel.identifier);
+                                    }
 
-                                                    layerSpritesheetPrintCount++;
+                                    // TODO: Don't perform all this if ! cel.frame
+                                    // TODO: Don't perform all this if !cel.isVisible
+                                    convert([temp('_' + pixakiFileName + '_canvas.png'), celImage, '-geometry', `+${cel.frame[0][0]}+${cel.frame[0][1]}`, '-composite', 'PNG32:' + temp(`_${pixakiFileName}_${cel.identifier}.png`)], (error) => {
 
-                                                    if (layerSpritesheetPrintCount == visibleLayers.length) {
-                                                        
-                                                        convert(['-size', `${column*size[0]}x${row*size[1]}`, 'canvas:transparent', 'PNG32:' + temp('_' + pixakiFileName + '_spritesheet_canvas.png')], () => {
+                                        convert([temp(`_${pixakiFileName}_${cel.identifier}.png`), '-alpha', 'set', '-background', 'none', '-channel', 'A', '-evaluate', 'multiply', (cel.isVisible ? (layer.opacity * cel.opacity) : 0), '+channel', 'PNG32:' + temp(`_${pixakiFileName}_${cel.identifier}.png`)], (error) => {
 
-                                                            // convert([temp('_' + pixakiFileName + '_spritesheet_srgb.png'), '-transparent', 'rgba(123,23,0,1)', temp('_' + pixakiFileName + '_spritesheet_canvas.png')], () => {
+                                            celPrintCount++;
+
+                                            if (celPrintCount == layer.clips.length) {
+
+                                                let column: number = animationDuration < columnCount ? animationDuration : columnCount, // max column wrap
+                                                    row: number = Math.ceil(animationDuration / columnCount); // rows based on column wrap number
+
+                                                let layerSpritesheet = temp(`_${pixakiFileName}_${layerIndex}_${layer.name.replace(" ", "-")}.png`);
+                                                let grabLayerIndex = (layerName: string) => {
+                                                    return parseInt(layerName.split(`_${pixakiFileName}_`)[1].split('_')[0]);
+                                                }
+
+                                                layerSpritesheets.push(layerSpritesheet);
+
+                                                let files = celIDList.map((celID: string) => {
+                                                    return temp(`_${pixakiFileName.replace(' ', '\ ')}_${celID}.png`);
+                                                });
+
+                                                multiMontage(gm, files)
+                                                    .tile(`${column}x${row}`)
+                                                    .geometry(`${size[0]}x${size[1]}+0+0`)
+                                                    .background('transparent')
+                                                    .write(layerSpritesheet, function (error) {
+
+                                                        if (error) {
+                                                            console.error(error);
+                                                        }
+
+                                                        layerSpritesheetPrintCount++;
+
+                                                        if (layerSpritesheetPrintCount == visibleLayers.length) {
+
+                                                            convert(['-size', `${column * size[0]}x${row * size[1]}`, 'canvas:transparent', 'PNG32:' + temp('_' + pixakiFileName + '_spritesheet_canvas.png')], () => {
+
+                                                                // convert([temp('_' + pixakiFileName + '_spritesheet_srgb.png'), '-transparent', 'rgba(123,23,0,1)', temp('_' + pixakiFileName + '_spritesheet_canvas.png')], () => {
 
                                                                 let pages: string[] = [];
 
@@ -218,38 +223,61 @@ export default function (path: string, columns: number, outDir: string, cwd: str
 
                                                                     globDoneCount++;
 
-                                                                    if (globDoneCount == documentFiles.length) {
+                                                                    if (globDoneCount == pixakiProjectFiles.length) {
 
                                                                         DisplayCompleteMessage(successCount, failCount);
                                                                         rimraf(TEMP_FOLDER_NAME, () => { });
                                                                     }
                                                                 });
-                                                            // });
-                                                        });
-                                                    }
-                                                });
-                                        }
+                                                            });
+                                                        }
+                                                    });
+                                            }
+                                        });
                                     });
+
+                                    // if (!clip.range) {
+
+                                    //     for (var i = 0; i < animationDuration; i++) {
+                                    //         celIDList.push(cel.identifier);
+                                    //     }
+
+                                    // } else {
+                                    //     celIDList.push(cel.identifier);
+                                    // }
                                 });
-                                
-                                if (!clip.range) {
+                            }
+                        });
 
-                                    for (var i = 0; i < animationDuration; i++) {
-                                        celIDList.push(cel.identifier);
-                                    }
-
-                                }else{
-                                    celIDList.push(cel.identifier);
-                                }
-                            });
-                        }
                     });
+                };
 
-                });
+                if (!fs.existsSync(TEMP_FOLDER_NAME)) {
+                    fs.mkdirSync(TEMP_FOLDER_NAME);
+                }
+
+                if (outDir != '' && !fs.existsSync(outDir)) {
+                    fs.mkdirSync(outDir);
+                }
+
+                if (isDirectory.sync(pixakiProjectFile)) {
+
+                    fsExtra.copySync(pixakiProjectFile, temp(pixakiProjectFile));
+                    doExport();
+
+                } else if (isZip(fs.readFileSync(pixakiProjectFile))) {
+
+                    decompress(pixakiProjectFile, temp(pixakiProjectFile)).then((files: any) => {
+                        doExport();
+                    });
+                } else {
+                    console.log(".pixaki file not a directory or zip");
+                }
+
             });
 
         } else {
-            console.log('\x1b[31m%s\x1b[0m', `Couldn't find file: "${pixakiFilesPath} (${documentJSONPath})"`);
+            console.log('\x1b[31m%s\x1b[0m', `Couldn't find file: "${pixakiFilesPath}"`);
         }
     });
 }

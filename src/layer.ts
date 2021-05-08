@@ -87,6 +87,7 @@ export default function (path: string, layerName: string, columns: number, outDi
                                     // clipIndex is 5 and range start is 9, push 4 (9-5)
                                     if (clip.range != null && clipIndex !== clip.range.start) {
 
+                                        // TODO: Add support for duration using range.end
                                         let difference = clip.range.start - clipIndex;
                                         for (var i = 0; i < difference; i++) {
                                             layerIDs.push('canvas');
