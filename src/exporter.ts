@@ -8,9 +8,6 @@ import fsExtra from 'fs-extra';
 
 export default function (path: string, columns: number, outDir: string, cwd: string) {
 
-    // require('events').EventEmitter.defaultMaxListeners = 20;
-    // process.setMaxListeners(0);
-
     console.log(`\nExporting...`);
 
     // TODO: Share duplicate code that exists between this and layer.ts (BaseCommand? GetPixakiFile + BaseArgs?)
@@ -47,9 +44,10 @@ export default function (path: string, columns: number, outDir: string, cwd: str
                         size = document.sprites[0].size, // [x,y] eg. [64,64]
                         layerSpritesheets: string[] = [],
                         pixakiFilePathWithoutCwd: string = !!cwd ? pixakiProjectFile.split(createdCwd)[1] : pixakiProjectFile,
-                        pixakiFileName: string = pixakiProjectFile.match(/[ \w-]+?(?=\.)/)[0];
+                        pixakiFileName: string = pixakiProjectFile.match(/[ \w-]+?(?=\.)/)[0],
+                        pixakiFileNameWithFoldersUnderscored: string = unzippedPixakiFilePath.replace(pixakiFileName + '.pixaki', '').replace(TEMP_FOLDER_NAME, '').split('/').join('_');
 
-                    convert(['-size', `${size[0]}x${size[1]}`, 'canvas:transparent', 'PNG32:' + temp('_' + pixakiFileName + '_canvas.png')], () => {
+                    convert(['-size', `${size[0]}x${size[1]}`, 'canvas:transparent', 'PNG32:' + temp('_' + pixakiFileNameWithFoldersUnderscored + '_canvas.png')], () => {
 
                         let layerSpritesheetPrintCount: number = 0,
                             visibleLayers = document.sprites[0].layers.filter((layer) => layer.isVisible),
@@ -66,7 +64,7 @@ export default function (path: string, columns: number, outDir: string, cwd: str
                                     clipIndex: number = 0;
 
                                 // Go through each frame in order of animation
-                                layer.clips.sort((a, b) => (a.range.start - b.range.start)).forEach((clip) => {
+                                layer.clips.sort((a, b) => (a.range.start - b.range.start)).forEach((clip, index) => {
 
                                     let cel: Partial<PixakiDocument['sprites'][0]['cels'][0]> = null;
 
@@ -97,7 +95,7 @@ export default function (path: string, columns: number, outDir: string, cwd: str
                                             ]
                                         };
 
-                                        celImage = 'PNG32:' + temp('_' + pixakiFileName + '_canvas.png');
+                                        celImage = 'PNG32:' + temp('_' + pixakiFileNameWithFoldersUnderscored + '_canvas.png');
                                     }
 
                                     // cel.frame can be null sometimes when cel has been manually erased, rather than cleared.
@@ -130,30 +128,41 @@ export default function (path: string, columns: number, outDir: string, cwd: str
                                         // TODO: Add support for duration using range.end
                                         let difference = clip.range.start - clipIndex;
                                         for (var i = 0; i < difference; i++) {
+                                            
                                             celIDList.push('canvas');
                                         }
 
-                                        clipIndex = difference;
+                                        clipIndex = clip.range.start;
 
                                     }
-
-                                    clipIndex++;
 
                                     if (!clip.range) {
 
                                         for (var i = 0; i < animationDuration; i++) {
+                                            
                                             celIDList.push(cel.identifier);
                                         }
 
                                     } else {
-                                        celIDList.push(cel.identifier);
+
+                                        for (var i = 0; i < (clip.range.end - clip.range.start); i++) {
+                                            
+                                            celIDList.push(cel.identifier);
+                                        }
+
+                                        clipIndex = clip.range.end;
                                     }
+
+                                    clipIndex++;
 
                                     // TODO: Don't perform all this if ! cel.frame
                                     // TODO: Don't perform all this if !cel.isVisible
-                                    convert([temp('_' + pixakiFileName + '_canvas.png'), celImage, '-geometry', `+${cel.frame[0][0]}+${cel.frame[0][1]}`, '-composite', 'PNG32:' + temp(`_${pixakiFileName}_${cel.identifier}.png`)], (error) => {
 
-                                        convert([temp(`_${pixakiFileName}_${cel.identifier}.png`), '-alpha', 'set', '-background', 'none', '-channel', 'A', '-evaluate', 'multiply', (cel.isVisible ? (layer.opacity * cel.opacity) : 0), '+channel', 'PNG32:' + temp(`_${pixakiFileName}_${cel.identifier}.png`)], (error) => {
+                                    // Position the cell on a blank canvas based on the frame position and size
+                                    convert([temp('_' + pixakiFileNameWithFoldersUnderscored + '_canvas.png'), celImage, '-geometry', `+${cel.frame[0][0]}+${cel.frame[0][1]}`, '-composite', 'PNG32:' + temp(`_${pixakiFileNameWithFoldersUnderscored}_${cel.identifier}.png`)], (error) => {
+
+                                        // Apply the opacity to the cel (overwrite)
+                                        convert([temp(`_${pixakiFileNameWithFoldersUnderscored}_${cel.identifier}.png`), '-alpha', 'set', '-background', 'none', '-channel', 'A', '-evaluate', 'multiply', (cel.isVisible ? (layer.opacity * cel.opacity) : 0), '+channel', 'PNG32:' + temp(`_${pixakiFileNameWithFoldersUnderscored}_${cel.identifier}.png`)], (error) => {
 
                                             celPrintCount++;
 
@@ -162,15 +171,15 @@ export default function (path: string, columns: number, outDir: string, cwd: str
                                                 let column: number = animationDuration < columnCount ? animationDuration : columnCount, // max column wrap
                                                     row: number = Math.ceil(animationDuration / columnCount); // rows based on column wrap number
 
-                                                let layerSpritesheet = temp(`_${pixakiFileName}_${layerIndex}_${layer.name.replace(" ", "-")}.png`);
+                                                let layerSpritesheet = temp(`_${pixakiFileNameWithFoldersUnderscored}_${layerIndex}_${layer.name.replace(" ", "-")}.png`);
                                                 let grabLayerIndex = (layerName: string) => {
-                                                    return parseInt(layerName.split(`_${pixakiFileName}_`)[1].split('_')[0]);
+                                                    return parseInt(layerName.split(`_${pixakiFileNameWithFoldersUnderscored}_`)[1].split('_')[0]);
                                                 }
 
                                                 layerSpritesheets.push(layerSpritesheet);
 
                                                 let files = celIDList.map((celID: string) => {
-                                                    return temp(`_${pixakiFileName.replace(' ', '\ ')}_${celID}.png`);
+                                                    return temp(`_${pixakiFileNameWithFoldersUnderscored.replace(' ', '\ ')}_${celID}.png`);
                                                 });
 
                                                 multiMontage(gm, files)
@@ -187,13 +196,11 @@ export default function (path: string, columns: number, outDir: string, cwd: str
 
                                                         if (layerSpritesheetPrintCount == visibleLayers.length) {
 
-                                                            convert(['-size', `${column * size[0]}x${row * size[1]}`, 'canvas:transparent', 'PNG32:' + temp('_' + pixakiFileName + '_spritesheet_canvas.png')], () => {
-
-                                                                // convert([temp('_' + pixakiFileName + '_spritesheet_srgb.png'), '-transparent', 'rgba(123,23,0,1)', temp('_' + pixakiFileName + '_spritesheet_canvas.png')], () => {
+                                                            convert(['-size', `${column * size[0]}x${row * size[1]}`, 'canvas:transparent', 'PNG32:' + temp('_' + pixakiFileNameWithFoldersUnderscored + '_spritesheet_canvas.png')], () => {
 
                                                                 let pages: string[] = [];
 
-                                                                pages.push('-page', '+0+0', temp('_' + pixakiFileName + '_spritesheet_canvas.png'));
+                                                                pages.push('-page', '+0+0', temp('_' + pixakiFileNameWithFoldersUnderscored + '_spritesheet_canvas.png'));
 
                                                                 layerSpritesheets.sort((a, b) => { return grabLayerIndex(a) - grabLayerIndex(b) }).reverse().forEach((spritesheetFile) => {
                                                                     pages.push('-page', '+0+0', spritesheetFile);
@@ -226,7 +233,7 @@ export default function (path: string, columns: number, outDir: string, cwd: str
                                                                     if (globDoneCount == pixakiProjectFiles.length) {
 
                                                                         DisplayCompleteMessage(successCount, failCount);
-                                                                        rimraf(TEMP_FOLDER_NAME, () => { });
+                                                                        // rimraf(TEMP_FOLDER_NAME, () => { });
                                                                     }
                                                                 });
                                                             });

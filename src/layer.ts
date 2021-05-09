@@ -93,7 +93,7 @@ export default function (path: string, layerName: string, columns: number, outDi
                                             layerIDs.push('canvas');
                                         }
 
-                                        clipIndex = difference;
+                                        clipIndex = clip.range.start;
 
                                     }
 
