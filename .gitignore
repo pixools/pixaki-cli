@@ -2,7 +2,8 @@
 node_modules
 dist
 *.pixaki
-!testFiles/**
 *.png
+!testFiles/**
+testFiles/*.png
 .DS_Store
 OUT_DIR

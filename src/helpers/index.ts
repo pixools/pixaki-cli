@@ -36,9 +36,9 @@ export let multiMontage = (magick: Magick, montageCollection: string[], montageI
 
     if (montageIndex < montageCollection.length - 1) {
 
-        let stateMontage = !state ? magick(montageCollection[montageIndex]) : state.montage(montageCollection[montageIndex]);
+        let stateMontage = !state ? magick('') : state.montage(montageCollection[montageIndex]);
         
-        return multiMontage(magick, montageCollection, montageIndex + 1, stateMontage);
+        return multiMontage(magick, montageCollection, montageIndex + (!state ? 0 : 1), stateMontage);
     } else {
         return state.montage(montageCollection[montageIndex]);
     }
