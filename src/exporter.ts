@@ -39,14 +39,15 @@ export default function (path: string, columns: number, outDir: string, cwd: str
             pixakiProjectFiles.forEach((pixakiProjectFile: string) => {
 
                 let doExport = () => {
+
                     let unzippedPixakiFilePath: string = temp(pixakiProjectFile),
                         document: PixakiDocument = JSON.parse(fs.readFileSync(`${unzippedPixakiFilePath}/document.json`, 'utf8')),
                         size = document.sprites[0].size, // [x,y] eg. [64,64]
                         layerSpritesheets: string[] = [],
                         pixakiFilePathWithoutCwd: string = !!cwd ? pixakiProjectFile.split(createdCwd)[1] : pixakiProjectFile,
                         pixakiFileName: string = pixakiProjectFile.match(/[ \w-]+?(?=\.)/)[0],
-                        pixakiFileNameWithFoldersUnderscored: string = unzippedPixakiFilePath.replace(pixakiFileName + '.pixaki', '').replace(TEMP_FOLDER_NAME, '').split('/').join('_');
-
+                        pixakiFileNameWithFoldersUnderscored: string = unzippedPixakiFilePath.replace(pixakiFileName + '.pixaki', pixakiFileName).replace(TEMP_FOLDER_NAME, '').split('/').join('_');
+                    
                     convert(['-size', `${size[0]}x${size[1]}`, 'canvas:transparent', 'PNG32:' + temp('_' + pixakiFileNameWithFoldersUnderscored + '_canvas.png')], () => {
 
                         let layerSpritesheetPrintCount: number = 0,
@@ -181,7 +182,7 @@ export default function (path: string, columns: number, outDir: string, cwd: str
                                                 let files = celIDList.map((celID: string) => {
                                                     return temp(`_${pixakiFileNameWithFoldersUnderscored.replace(' ', '\ ')}_${celID}.png`);
                                                 });
-
+                                                
                                                 multiMontage(gm, files)
                                                     .tile(`${column}x${row}`)
                                                     .geometry(`${size[0]}x${size[1]}+0+0`)
@@ -217,7 +218,7 @@ export default function (path: string, columns: number, outDir: string, cwd: str
                                                                 if (outFolderPath != '') {
                                                                     fs.mkdirSync(outFolderPath, { recursive: true });
                                                                 }
-
+                                                                
                                                                 convert(pages.concat(['-background', 'transparent', '-layers', 'merge', '+repage', `./${outFilePath}`]), (error) => {
 
                                                                     if (error) {
@@ -233,7 +234,7 @@ export default function (path: string, columns: number, outDir: string, cwd: str
                                                                     if (globDoneCount == pixakiProjectFiles.length) {
 
                                                                         DisplayCompleteMessage(successCount, failCount);
-                                                                        // rimraf(TEMP_FOLDER_NAME, () => { });
+                                                                        rimraf(TEMP_FOLDER_NAME, () => { });
                                                                     }
                                                                 });
                                                             });
@@ -242,16 +243,6 @@ export default function (path: string, columns: number, outDir: string, cwd: str
                                             }
                                         });
                                     });
-
-                                    // if (!clip.range) {
-
-                                    //     for (var i = 0; i < animationDuration; i++) {
-                                    //         celIDList.push(cel.identifier);
-                                    //     }
-
-                                    // } else {
-                                    //     celIDList.push(cel.identifier);
-                                    // }
                                 });
                             }
                         });

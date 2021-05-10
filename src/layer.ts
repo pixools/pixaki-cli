@@ -90,6 +90,7 @@ export default function (path: string, layerName: string, columns: number, outDi
                                         // TODO: Add support for duration using range.end
                                         let difference = clip.range.start - clipIndex;
                                         for (var i = 0; i < difference; i++) {
+                                            
                                             layerIDs.push('canvas');
                                         }
 
@@ -97,7 +98,22 @@ export default function (path: string, layerName: string, columns: number, outDi
 
                                     }
 
-                                    layerIDs.push(clip.itemIdentifier);
+                                    if (!clip.range) {
+
+                                        for (var i = 0; i < document.sprites[0].duration; i++) {
+                                            
+                                            layerIDs.push(clip.itemIdentifier);
+                                        }
+
+                                    } else {
+
+                                        for (var i = 0; i < (clip.range.end - clip.range.start); i++) {
+                                            
+                                            layerIDs.push(clip.itemIdentifier);
+                                        }
+
+                                        clipIndex = clip.range.end;
+                                    }
 
                                     clipIndex++;
                                 }
