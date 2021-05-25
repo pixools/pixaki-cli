@@ -33,13 +33,23 @@ export let multiMontage = (magick: Magick, montageCollection: string[], montageI
     if (!montageIndex) {
         montageIndex = 0;
     }
+    
+    // If only 1 item
+    if(montageCollection.length == 1 && montageIndex == 0){
+        
+        let stateMontage = magick('');
+        return stateMontage.montage(montageCollection[montageIndex]);
 
-    if (montageIndex < montageCollection.length - 1) {
+    // Not at end
+    }else if (montageIndex < montageCollection.length - 1) {
 
         let stateMontage = !state ? magick('') : state.montage(montageCollection[montageIndex]);
         
         return multiMontage(magick, montageCollection, montageIndex + (!state ? 0 : 1), stateMontage);
+    
+    // At end
     } else {
+        
         return state.montage(montageCollection[montageIndex]);
     }
 }

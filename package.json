@@ -1,6 +1,6 @@
 {
   "name": "pixaki",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "",
   "scripts": {
     "build": "rimraf dist && npx webpack && node chmod && cp src/package.json dist/package.json && cp src/README.md dist/README.md",
