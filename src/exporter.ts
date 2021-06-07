@@ -1,14 +1,14 @@
 import { PixakiDocument } from "./interfaces";
 import { convert } from 'imagemagick';
 import { TEMP_FOLDER_NAME } from './constants';
-import { temp, DisplayCompleteMessage, cwdCreate, multiMontage } from "./helpers";
+import { temp, DisplayCompleteMessage, cwdCreate, multiMontage, DisplayMessage, MessageType } from "./helpers";
 import { glob } from "glob";
 import { subClass } from "gm";
 import fsExtra from 'fs-extra';
 
 export default function (path: string, columns: number, outDir: string, cwd: string) {
 
-    console.log(`\nExporting...`);
+    DisplayMessage(MessageType.INFO, (`\nExporting...`));
 
     // TODO: Share duplicate code that exists between this and layer.ts (BaseCommand? GetPixakiFile + BaseArgs?)
     const fs = require('fs');
@@ -51,7 +51,7 @@ export default function (path: string, columns: number, outDir: string, cwd: str
                     convert(['-size', `${size[0]}x${size[1]}`, 'canvas:transparent', 'PNG32:' + temp('_' + pixakiFileNameWithFoldersUnderscored + '_canvas.png')], () => {
 
                         let layerSpritesheetPrintCount: number = 0,
-                            visibleLayers = document.sprites[0].layers.filter((layer) => layer.isVisible),
+                            visibleLayers = document.sprites[0].layers.filter((layer) => layer.isVisible && layer.clips.length != 0),
                             animationDuration = document.sprites[0].duration;
 
                         // Each layer
@@ -101,7 +101,8 @@ export default function (path: string, columns: number, outDir: string, cwd: str
 
                                     // cel.frame can be null sometimes when cel has been manually erased, rather than cleared.
                                     // This is so that the process can still go ahead
-                                    if (!cel.frame) {
+                                    if (!cel.frame || !fsExtra.existsSync(celImage)) {
+                                        
                                         cel = {
                                             identifier: 'canvas',
                                             isVisible: false,
@@ -207,7 +208,7 @@ export default function (path: string, columns: number, outDir: string, cwd: str
                                                                     pages.push('-page', '+0+0', spritesheetFile);
                                                                 });
 
-                                                                let outFile: string = pixakiFilePathWithoutCwd.replace('.pixaki', '.png'); // sprite.png, folder/sprite.png
+                                                                let outFile: string = pixakiFilePathWithoutCwd.replace(new RegExp('.pixaki$'), '.png'); // sprite.png, folder/sprite.png
                                                                 let outFilePath: string = `${outDir}${outFile}`; // OUT_DIR/sprite.png, OUT_DIR/folder/sprite.png, sprite.png, folder/sprite.png
                                                                 let outFolderPath: string = outFilePath.split(pixakiFileName)[0];
 
@@ -222,10 +223,10 @@ export default function (path: string, columns: number, outDir: string, cwd: str
                                                                 convert(pages.concat(['-background', 'transparent', '-layers', 'merge', '+repage', `./${outFilePath}`]), (error) => {
 
                                                                     if (error) {
-                                                                        console.log(`\x1b[31m%s\x1b[0m ${outFilePath} (${error})`, 'x');
+                                                                        DisplayMessage(MessageType.ERROR, 'x', `${outFilePath} (${error})`);
                                                                         failCount++;
                                                                     } else {
-                                                                        console.log(`\x1b[32m%s\x1b[0m ${outFilePath}`, `✔️`);
+                                                                        DisplayMessage(MessageType.SUCCESS, `✔️`, outFilePath);
                                                                         successCount++;
                                                                     }
 
@@ -234,7 +235,7 @@ export default function (path: string, columns: number, outDir: string, cwd: str
                                                                     if (globDoneCount == pixakiProjectFiles.length) {
 
                                                                         DisplayCompleteMessage(successCount, failCount);
-                                                                        rimraf(TEMP_FOLDER_NAME, () => { });
+                                                                        // rimraf(TEMP_FOLDER_NAME, () => { });
                                                                     }
                                                                 });
                                                             });
@@ -259,23 +260,21 @@ export default function (path: string, columns: number, outDir: string, cwd: str
                 }
 
                 if (isDirectory.sync(pixakiProjectFile)) {
-
                     fsExtra.copySync(pixakiProjectFile, temp(pixakiProjectFile));
                     doExport();
 
                 } else if (isZip(fs.readFileSync(pixakiProjectFile))) {
-
                     decompress(pixakiProjectFile, temp(pixakiProjectFile)).then((files: any) => {
                         doExport();
                     });
                 } else {
-                    console.log(".pixaki file not a directory or zip");
+                    DisplayMessage(MessageType.ERROR, ".pixaki file not a directory or zip");
                 }
 
             });
 
         } else {
-            console.log('\x1b[31m%s\x1b[0m', `Couldn't find file: "${pixakiFilesPath}"`);
+            DisplayMessage(MessageType.ERROR, `Couldn't find file: "${pixakiFilesPath}"`);
         }
     });
 }

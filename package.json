@@ -1,6 +1,6 @@
 {
   "name": "pixaki",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "",
   "scripts": {
     "build": "rimraf dist && npx webpack && node chmod && cp src/package.json dist/package.json && cp src/README.md dist/README.md",
@@ -21,6 +21,9 @@
   "license": "ISC",
   "bin": {
     "pixaki": "./dist/cli.js"
+  },
+  "browser": {
+    "child_process": false
   },
   "dependencies": {
     "assert": "^2.0.0",
